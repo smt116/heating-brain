@@ -27,13 +27,14 @@ defmodule Brain.MixProject do
   defp deps do
     [
       {:credo, "~> 1.1", only: [:dev], runtime: false},
-      {:dialyxir, "~> 1.0.0-rc.7", only: [:dev], runtime: false}
+      {:dialyxir, "~> 1.0.0-rc.7", only: [:dev], runtime: false},
+      {:stream_data, "~> 0.4", only: [:dev, :test], runtime: false}
     ]
   end
 
   defp dialyzer do
     [
-      plt_add_apps: [],
+      plt_add_apps: [:mnesia],
       plt_add_deps: :transitive,
       flags: [
         :error_handling,

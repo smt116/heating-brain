@@ -9,6 +9,7 @@ defmodule Collector.MixProject do
       deps: [],
       deps_path: "../../deps",
       elixir: "~> 1.9",
+      elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
       version: "0.1.0"
@@ -21,4 +22,7 @@ defmodule Collector.MixProject do
       mod: {Collector.Application, []}
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test"]
+  defp elixirc_paths(_), do: ["lib"]
 end
