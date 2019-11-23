@@ -3,14 +3,43 @@ defmodule Brain.MixProject do
 
   def project do
     [
+      aliases: aliases(),
       apps_path: "apps",
-      version: "0.1.0",
+      deps: deps(),
+      dialyzer: dialyzer(),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      version: "0.1.0"
+    ]
+  end
+
+  defp aliases do
+    [
+      check: [
+        "compile",
+        "format --check-formatted",
+        "dialyzer",
+        "hex.audit",
+        "credo suggest --all"
+      ]
     ]
   end
 
   defp deps do
-    []
+    [
+      {:credo, "~> 1.1", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.7", only: [:dev], runtime: false}
+    ]
+  end
+
+  defp dialyzer do
+    [
+      plt_add_apps: [],
+      plt_add_deps: :transitive,
+      flags: [
+        :error_handling,
+        :race_conditions,
+        :underspecs
+      ]
+    ]
   end
 end
