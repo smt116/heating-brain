@@ -8,4 +8,7 @@ defmodule Collector do
   defdelegate latest, to: Collector.Sensors
   defdelegate latest(within), to: Collector.Sensors
   defdelegate read_all, to: Collector.Sensors
+
+  defdelegate subscribe, to: Collector.Storage
+  defdelegate unsubscribe(pid), to: Collector.Storage
 end

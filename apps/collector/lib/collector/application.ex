@@ -4,10 +4,9 @@ defmodule Collector.Application do
   use Application
 
   def start(_type, _args) do
-    :ok = Collector.Storage.init()
-
     children = [
-      {Collector.Reader, []}
+      {Collector.Reader, []},
+      {Collector.Storage, []}
     ]
 
     opts = [strategy: :one_for_one, name: Collector.Supervisor]

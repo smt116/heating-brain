@@ -1,7 +1,12 @@
 defmodule Collector.StorageTest do
   use Collector.DataCase, async: false
 
-  import Collector.Storage, only: [read: 2, write: 1]
+  import Collector.Storage, only: [
+    read: 2,
+    subscribe: 0,
+    unsubscribe: 1,
+    write: 1
+  ]
 
   alias Collector.Measurement
 
@@ -55,6 +60,67 @@ defmodule Collector.StorageTest do
 
       refute Enum.member?(measurements, expected)
       assert actual === expected
+    end
+  end
+
+  describe "subscribe/0" do
+    test "subscribes to storage events" do
+      :ok = subscribe()
+
+      measurement = ExUnitProperties.pick(Generators.measurement())
+      assert :ok = write(measurement)
+
+      assert_receive({:new_record, ^measurement})
+
+      :ok = unsubscribe(self())
+    end
+
+    test "ensures process won't be subscribed twice" do
+      :ok = subscribe()
+      :ok = subscribe()
+      :ok = subscribe()
+
+      measurement = ExUnitProperties.pick(Generators.measurement())
+      assert :ok = write(measurement)
+
+      assert_receive({:new_record, ^measurement})
+      refute_receive({:new_record, ^measurement})
+
+      :ok = unsubscribe(self())
+    end
+
+    test "ensures process is usubscribed when it dies" do
+      pid = Process.spawn(fn ->
+        :ok = subscribe()
+        Process.sleep(5_000)
+      end, [])
+      :erlang.trace(pid, true, [:receive])
+
+      Process.exit(pid, :normal)
+
+      measurement = ExUnitProperties.pick(Generators.measurement())
+      assert :ok = write(measurement)
+
+      refute_receive({:trace, ^pid, :receive, {:"$gen_cast", _}})
+    end
+  end
+
+  describe "unsubscribe/0" do
+    test "unsubscribes from storage events" do
+      pid = Process.spawn(fn ->
+        :ok = subscribe()
+        Process.sleep(5_000)
+      end, [])
+      :erlang.trace(pid, true, [:receive])
+
+      unsubscribe(pid)
+
+      measurement = ExUnitProperties.pick(Generators.measurement())
+      assert :ok = write(measurement)
+
+      refute_receive({:trace, ^pid, :receive, {:"$gen_cast", _}})
+
+      Process.exit(pid, :normal)
     end
   end
 end
