@@ -27,4 +27,7 @@ config :logger, :console,
 
 config :mnesia, dir: 'mnesia/#{Mix.env()}-#{node()}'
 
-config :stream_data, max_runs: 50
+config :stream_data,
+  initial_size: 10,
+  max_run_time: 1000,
+  max_runs: 100

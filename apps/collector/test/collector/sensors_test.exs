@@ -50,6 +50,7 @@ defmodule Collector.SensorsTest do
             {
               id,
               values
+              |> Stream.uniq_by(& {id, &1.timestamp})
               |> Stream.map(&{&1.timestamp, &1.value})
               |> Enum.sort_by(&elem(&1, 0))
             }

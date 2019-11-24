@@ -30,5 +30,5 @@ defmodule Collector.Generators do
     )
   end
 
-  def value, do: float(min: 16.0, max: 32.0)
+  def value, do: map(float(min: 16.0, max: 32.0), &Float.round(&1, 3))
 end

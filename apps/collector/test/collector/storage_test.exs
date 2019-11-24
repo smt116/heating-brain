@@ -43,13 +43,18 @@ defmodule Collector.StorageTest do
         end
       end
 
+      actual =
+        with_expected_value
+        |> read(Measurement)
+        |> Enum.sort_by(&{&1.id, &1.timestamp})
+
       expected =
         measurements
         |> Stream.filter(& &1.value > 15.0)
-        |> Enum.sort()
+        |> Enum.sort_by(&{&1.id, &1.timestamp})
 
       refute Enum.member?(measurements, expected)
-      assert read(with_expected_value, Measurement) |> Enum.sort() === expected
+      assert actual === expected
     end
   end
 end
