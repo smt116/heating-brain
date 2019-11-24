@@ -28,6 +28,8 @@ defmodule Collector.Storage do
 
   @opaque state :: list({pid, reference})
 
+  @tables_storage Application.get_env(:mnesia, :tables_storage)
+
   @impl true
   @spec init(state) :: {:ok, state}
   def init(subscribers) do
@@ -202,8 +204,8 @@ defmodule Collector.Storage do
 
   defp initialize_table(table_name, attributes) do
     opts = [
-      attributes: attributes,
-      disc_only_copies: [node()]
+      {:attributes, attributes},
+      {@tables_storage, [node()]}
     ]
 
     case Mnesia.create_table(table_name, opts) do

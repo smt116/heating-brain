@@ -25,7 +25,9 @@ config :logger, :console,
   format: "$date $time [$level] $metadata$message\n",
   metadata: [:application, :module]
 
-config :mnesia, dir: 'mnesia/#{Mix.env()}-#{node()}'
+config :mnesia,
+  dir: 'mnesia/#{Mix.env()}-#{node()}',
+  tables_storage: if(Mix.env() === :test, do: :ram_copies, else: :disc_only_copies)
 
 config :stream_data,
   initial_size: 10,
