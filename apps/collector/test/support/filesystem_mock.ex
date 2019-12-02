@@ -5,12 +5,6 @@ defmodule Collector.FilesystemMock do
 
   use GenServer
 
-  @opaque content :: String.t()
-  @opaque path :: String.t()
-  @opaque value :: :directory | :driver, {:file, content}
-
-  @opaque state :: list({path, value})
-
   @gpio_path Application.get_env(:collector, :gpio_base_path)
   @gpio_export_path Path.join([@gpio_path, "export"])
   @relays_map Application.get_env(:collector, :relays_map)
@@ -71,6 +65,15 @@ defmodule Collector.FilesystemMock do
     {:reply, :ok, Keyword.put(state, path, :directory)}
   end
 
+  def handle_call(:paths, _pid, state) do
+    paths =
+      state
+      |> Stream.map(&elem(&1, 0))
+      |> Enum.map(&to_string/1)
+
+    {:reply, paths, state}
+  end
+
   def handle_call({:read!, path}, _pid, state) do
     value = Keyword.get(state, path)
     if is_nil(value) do
@@ -110,15 +113,23 @@ defmodule Collector.FilesystemMock do
     GenServer.call(__MODULE__, {:mkdir!, String.to_atom(path)})
   end
 
+  def paths do
+    GenServer.call(__MODULE__, :paths)
+  end
+
   def read!(path) when is_binary(path) do
     case GenServer.call(__MODULE__, {:read!, String.to_atom(path)}) do
       {:ok, {:file, content}} ->
         content
 
       :error ->
-        raise File.Error, "could not read file \"#{path}\":" <>
-          "no such file or directory"
+        raise("could not read file \"#{path}\": no such file or directory")
     end
+  end
+
+  def reset do
+    clear()
+    Collector.Relays.setup_all()
   end
 
   def set_sensor(id, value, opts \\ []) when is_atom(id) and is_float(value) do
@@ -132,6 +143,15 @@ defmodule Collector.FilesystemMock do
     |> Enum.each(&create/1)
 
     GenServer.call(__MODULE__, :refresh_w1_slaves_content)
+  end
+
+  def set_relay(label, value) when is_atom(label) and is_boolean(value) do
+    {_, pin, direction} = Enum.find(@relays_map, fn {l, _, _} -> label === l end)
+    raw_value = if(value, do: "1\n", else: "0\n")
+
+    pin
+    |> gpio_paths(direction, raw_value)
+    |> Enum.each(&create/1)
   end
 
   def write!(@gpio_export_path, pin) when is_binary(pin) do
@@ -148,12 +168,14 @@ defmodule Collector.FilesystemMock do
   defp create({path, {:file, content}}), do: write!(path, content)
 
   defp gpio_paths({_, pin, direction}), do: gpio_paths(pin, direction)
-  defp gpio_paths(pin, d) when is_number(pin), do: to_string(pin) |> gpio_paths(d)
-  defp gpio_paths(pin, direction) when is_binary(pin) and is_binary(direction) do
+
+  defp gpio_paths(pin, direction \\ "out", value \\ "0\n")
+  defp gpio_paths(p, d, v) when is_number(p), do: to_string(p) |> gpio_paths(d, v)
+  defp gpio_paths(p, d, v) when is_binary(p) and is_binary(d) and is_binary(v) do
     [
-      {Path.join([@gpio_path, pin]), :directory},
-      {Path.join([@gpio_path, pin, "value"]), {:file, "0\n"}},
-      {Path.join([@gpio_path, pin, "direction"]), {:file, direction <> "\n"}}
+      {Path.join([@gpio_path, p]), :directory},
+      {Path.join([@gpio_path, p, "value"]), {:file, v}},
+      {Path.join([@gpio_path, p, "direction"]), {:file, d <> "\n"}}
     ]
   end
 

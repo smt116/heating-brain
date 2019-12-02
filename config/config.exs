@@ -1,10 +1,10 @@
 import Config
 
-filesystem_handler =
+[filesystem_handler, filesystem_process] =
   if Mix.env() === :prod do
-    File
+    [File, nil]
   else
-    Collector.FilesystemMock
+    [Collector.FilesystemMock, {Collector.FilesystemMock, []}]
   end
 
 logger_level =
@@ -16,6 +16,7 @@ logger_level =
 
 config :collector,
   filesystem_handler: filesystem_handler,
+  filesystem_process: filesystem_process,
   gpio_base_path: "/sys/class/gpio",
   read_initial_delay: 1_000,
   read_initial_enabled: if(Mix.env() === :test, do: false, else: true),

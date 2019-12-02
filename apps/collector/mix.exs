@@ -24,5 +24,6 @@ defmodule Collector.MixProject do
   end
 
   defp elixirc_paths(:prod), do: ["lib"]
+  defp elixirc_paths(:dev), do: ["lib", "test/support/filesystem_mock.ex"]
   defp elixirc_paths(_), do: ["lib", "test"]
 end

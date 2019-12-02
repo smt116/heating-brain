@@ -114,9 +114,9 @@ defmodule Collector.Storage do
 
   @impl true
   def handle_info({:DOWN, _ref, :process, pid, _reason}, subscribers) do
-    Logger.warn(fn -> "Subscribed #{label(pid)} is down" end)
-    GenServer.call(__MODULE__, {:unsubscribe, pid})
-    {:noreply, subscribers}
+    Logger.debug(fn -> "Subscribed #{label(pid)} is down" end)
+    tuple = Enum.find(subscribers, fn {pid, _} -> pid === pid end)
+    {:noreply, List.delete(subscribers, tuple)}
   end
 
   @impl true

@@ -33,16 +33,6 @@ defmodule Collector.HeatingController do
   end
 
   @impl true
-  @spec handle_info(:put_heating_state, state) :: {:noreply, state}
-  def handle_info(:put_heating_state, state) do
-    relay_state = Enum.any?(state[:valves])
-
-    Logger.debug(fn -> "Opened valves: #{inspect(state[:valves])}" end)
-    RelayState.new(@heating_label, relay_state) |> put_state()
-
-    {:noreply, state}
-  end
-
   @spec handle_info({:new_record, record}, state) :: {:noreply, state}
   def handle_info({:new_record, %RelayState{} = relay_state}, state) do
     if changes_heating_relay_state?(relay_state, state) do
@@ -54,6 +44,16 @@ defmodule Collector.HeatingController do
 
   @impl true
   def handle_info({:new_record, _record}, state), do: {:noreply, state}
+
+  @spec handle_info(:put_heating_state, state) :: {:noreply, state}
+  def handle_info(:put_heating_state, state) do
+    relay_state = Enum.any?(state[:valves])
+
+    Logger.debug(fn -> "Opened valves: #{inspect(state[:valves])}" end)
+    RelayState.new(@heating_label, relay_state) |> put_state()
+
+    {:noreply, state}
+  end
 
   @spec start_link(state) :: GenServer.on_start()
   def start_link(state) do

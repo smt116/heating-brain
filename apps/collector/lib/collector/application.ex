@@ -3,28 +3,19 @@ defmodule Collector.Application do
 
   use Application
 
-  @handler Application.get_env(:collector, :filesystem_handler)
-  @start_mock @handler === Collector.FilesystemMock
+  @handler_process Application.get_env(:collector, :filesystem_process)
 
   @impl true
   def start(_type, _args) do
-    development_children =
-      if @start_mock do
-        [{Collector.FilesystemMock, []}]
-      else
-        []
-      end
-
     # The order of children is important.
-    children = Enum.concat(
-      development_children,
-      [
-        {Collector.Storage, []},
-        {Collector.HeatingController, []},
-        {Collector.Controller, []},
-        {Collector.Reader, []}
-      ]
-    )
+    children = Enum.reject([@handler_process |
+                [
+                  {Collector.Storage, []},
+                  {Collector.HeatingController, []},
+                  {Collector.Controller, []},
+                  {Collector.Reader, []}
+                ]
+               ], &is_nil/1)
 
     opts = [strategy: :rest_for_one, name: Collector.Supervisor]
     Supervisor.start_link(children, opts)
