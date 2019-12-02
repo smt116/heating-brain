@@ -5,7 +5,7 @@ defmodule Collector.RelaysTest do
   import Collector.Storage, only: [write: 1]
 
   setup do
-    FilesystemGenerator.clear()
+    FilesystemMock.clear()
 
     :ok
   end

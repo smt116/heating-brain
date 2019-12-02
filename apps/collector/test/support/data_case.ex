@@ -8,14 +8,13 @@ defmodule Collector.DataCase do
       use ExUnitProperties
 
       alias Collector.DatabaseHelper
-      alias Collector.FilesystemGenerator
+      alias Collector.FilesystemMock
       alias Collector.Generators
     end
   end
 
-  setup_all _tags do
-    Collector.DatabaseHelper.clear_tables()
-    {:ok, _pid} = Collector.FilesystemGenerator.start_link()
+  setup_all do
+    :ok = Collector.FilesystemMock.clear()
 
     :ok
   end

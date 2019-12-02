@@ -7,15 +7,15 @@ defmodule Collector.ReaderTest do
   alias Collector.Storage
 
   setup do
-    FilesystemGenerator.clear()
+    FilesystemMock.clear()
 
     :ok
   end
 
   describe "handle_info/2" do
     test "read_all writes readings into the database" do
-      FilesystemGenerator.set_sensor(:foo, 23.187)
-      FilesystemGenerator.set_sensor(:bar, 24.011)
+      FilesystemMock.set_sensor(:foo, 23.187)
+      FilesystemMock.set_sensor(:bar, 24.011)
 
       :ok = Storage.subscribe()
 

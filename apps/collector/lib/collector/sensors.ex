@@ -7,6 +7,7 @@ defmodule Collector.Sensors do
   alias Collector.Measurement
   alias Collector.Storage
 
+  @handler Application.get_env(:collector, :filesystem_handler)
   @w1_bus_master1_path Application.get_env(:collector, :w1_bus_master1_path)
 
   @doc """
@@ -34,7 +35,7 @@ defmodule Collector.Sensors do
   def read_all do
     w1_sensors()
     |> Stream.map(&{&1, sensor_output_path(&1)})
-    |> Stream.map(fn {id, path} -> {id, File.read!(path)} end)
+    |> Stream.map(fn {id, path} -> {id, @handler.read!(path)} end)
     |> Stream.map(fn {id, output} -> {id, extract_temperature(output)} end)
     |> Stream.reject(fn {_, check} -> check === :error end)
     |> Stream.map(fn {id, {:ok, value}} -> {id, Integer.parse(value)} end)
@@ -102,7 +103,7 @@ defmodule Collector.Sensors do
   defp w1_sensors do
     @w1_bus_master1_path
     |> Path.join("w1_master_slaves")
-    |> File.read!()
+    |> @handler.read!()
     |> String.split()
   end
 

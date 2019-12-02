@@ -50,7 +50,7 @@ defmodule Collector.Controller do
     item = Enum.find(@sensors_map, &elem(&1, 0) === id)
 
     if is_nil(item) do
-      Logger.warn(fn -> "There is no mapping for #{id} sensor" end)
+      Logger.info(fn -> "There is no mapping for #{id} sensor" end)
     else
       {_, label, expected_value} = item
 

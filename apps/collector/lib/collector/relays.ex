@@ -10,6 +10,7 @@ defmodule Collector.Relays do
   alias Collector.Storage
 
   @gpio_base_path Application.get_env(:collector, :gpio_base_path)
+  @handler Application.get_env(:collector, :filesystem_handler)
   @relays_map Application.get_env(:collector, :relays_map)
 
   @type label :: RelayState.label()
@@ -60,7 +61,7 @@ defmodule Collector.Relays do
 
       label
       |> relay_raw_value_path()
-      |> File.write!(raw_value)
+      |> @handler.write!(raw_value)
 
       :ok = RelayState.new(label, value) |> Storage.write()
     end
@@ -118,7 +119,7 @@ defmodule Collector.Relays do
   defp relay_direction(label) do
     label
     |> relay_direction_path()
-    |> File.read!()
+    |> @handler.read!()
     |> String.trim()
   end
 
@@ -137,7 +138,7 @@ defmodule Collector.Relays do
   defp relay_raw_value(label) do
     label
     |> relay_raw_value_path()
-    |> File.read!()
+    |> @handler.read!()
     |> String.trim()
   end
 
@@ -154,18 +155,18 @@ defmodule Collector.Relays do
   end
 
   defp setup({label, pin, direction}) do
-    if relay_directory_path(label) |> File.dir?() do
+    if relay_directory_path(label) |> @handler.dir?() do
       Logger.debug(fn -> "Pin #{pin} for #{label} is already exported" end)
     else
       Logger.info(fn -> "Exporing pin #{pin} for #{label}" end)
-      Path.join(@gpio_base_path, "export") |> File.write!(to_string(pin))
+      Path.join(@gpio_base_path, "export") |> @handler.write!(to_string(pin))
     end
 
     if relay_direction(label) === direction do
       Logger.debug(fn -> "Pin #{pin} for #{label} is already as #{direction}" end)
     else
       Logger.info(fn -> "Setting up pin #{pin} as #{direction} for #{label}" end)
-      label |> relay_direction() |> File.write!(direction)
+      label |> relay_direction() |> @handler.write!(direction)
     end
 
     :ok

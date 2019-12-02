@@ -1,5 +1,12 @@
 import Config
 
+filesystem_handler =
+  if Mix.env() === :prod do
+    File
+  else
+    Collector.FilesystemMock
+  end
+
 logger_level =
   if Mix.env() === :test do
     :warn
@@ -7,22 +14,9 @@ logger_level =
     :debug
   end
 
-gpio_base_path =
-  case Mix.env() do
-    :dev -> "filesystem/gpio"
-    :prod -> "/sys/class/gpio"
-    :test -> "test/fixtures/sys/class/gpio"
-  end
-
-w1_bus_master1_path =
-  case Mix.env() do
-    :dev -> "filesystem/1wire"
-    :prod -> "/sys/bus/w1/devices/w1_bus_master1"
-    :test -> "test/fixtures/sys/bus/w1/devices/w1_bus_master1"
-  end
-
 config :collector,
-  gpio_base_path: gpio_base_path,
+  filesystem_handler: filesystem_handler,
+  gpio_base_path: "/sys/class/gpio",
   read_initial_delay: 1_000,
   read_initial_enabled: if(Mix.env() === :test, do: false, else: true),
   read_interval: 10_000,
@@ -41,7 +35,7 @@ config :collector,
     {:"28-01187615e4ff", :valve1, 25.0},
     {:"28-0118761f69ff", :valve2, 23.5}
   ],
-  w1_bus_master1_path: w1_bus_master1_path
+  w1_bus_master1_path: "/sys/bus/w1/devices/w1_bus_master1"
 
 config :logger, :console,
   level: logger_level,

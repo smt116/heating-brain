@@ -5,33 +5,33 @@ defmodule Collector.SensorsTest do
   import Collector.Storage, only: [write: 1]
 
   setup do
-    FilesystemGenerator.clear()
+    FilesystemMock.clear()
 
     :ok
   end
 
   describe "read_all/0" do
     test "reads measurements from the filesystem" do
-      FilesystemGenerator.set_sensor(:foo, 23.187)
-      FilesystemGenerator.set_sensor(:bar, 24.011)
+      FilesystemMock.set_sensor(:foo, 23.187)
+      FilesystemMock.set_sensor(:bar, 24.011)
 
       assert [
-        %Collector.Measurement{
-          id: :foo,
-          timestamp: _,
-          value: 23.187
-        },
         %Collector.Measurement{
           id: :bar,
           timestamp: _,
           value: 24.011
+        },
+        %Collector.Measurement{
+          id: :foo,
+          timestamp: _,
+          value: 23.187
         }
       ] = read_all()
     end
 
     test "does not include malformed readings" do
-      FilesystemGenerator.set_sensor(:foo, 23.187)
-      FilesystemGenerator.set_sensor(:bar, 24.011, malformed: true)
+      FilesystemMock.set_sensor(:foo, 23.187)
+      FilesystemMock.set_sensor(:bar, 24.011, malformed: true)
 
       assert [%Collector.Measurement{id: :foo, value: 23.187}] = read_all()
     end
