@@ -5,7 +5,7 @@ defmodule Collector.SensorsTest do
   import Collector.Storage, only: [write: 1]
 
   setup do
-    FilesystemGenerator.clear_sensors()
+    FilesystemGenerator.clear()
 
     :ok
   end
@@ -40,7 +40,7 @@ defmodule Collector.SensorsTest do
   describe "get/0" do
     property "fetches all measurements from the database" do
       check all measurements <- list_of(Generators.measurement()) do
-        DatabaseHelper.clear_measurements_table()
+        DatabaseHelper.clear_tables()
         Enum.each(measurements, &write/1)
 
         expected_response =

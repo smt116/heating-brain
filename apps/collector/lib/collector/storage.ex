@@ -9,8 +9,13 @@ defmodule Collector.Storage do
 
   alias :mnesia, as: Mnesia
   alias Collector.Measurement
+  alias Collector.RelayState
 
   @type measurement :: Measurement.t()
+  @type relay_state :: RelayState.t()
+
+  @type record :: measurement | relay_state
+  @type table :: Measurement | RelayState
 
   @typep caller :: {pid, term}
   @typep unix_timestamp :: pos_integer
@@ -21,10 +26,19 @@ defmodule Collector.Storage do
   @typep db_m_delete_object :: {:delete_object, db_m, term}
   @typep db_m_delete :: {:delete, {Measurement, db_m_key}, term}
 
+  @typep db_r_key :: {RelayState.label(), unix_timestamp}
+  @typep db_r :: {RelayState, db_r_key, boolean}
+  @typep db_r_write :: {:write, db_r, term}
+  @typep db_r_delete_object :: {:delete_object, db_r, term}
+  @typep db_r_delete :: {:delete, {RelayState, db_r_key}, term}
+
   @typep mnesia_table_event ::
     {:mnesia_table_event, db_m_write
                         | db_m_delete_object
-                        | db_m_delete}
+                        | db_m_delete
+                        | db_r_write
+                        | db_r_delete_object
+                        | db_r_delete}
 
   @opaque state :: list({pid, reference})
 
@@ -38,10 +52,13 @@ defmodule Collector.Storage do
 
     :ok = Mnesia.start()
     :ok = initialize_table(Measurement, [:reading, :unix])
-    :ok = Mnesia.wait_for_tables([Measurement], 5000)
+    :ok = initialize_table(RelayState, [:state, :unix])
+    :ok = Mnesia.wait_for_tables([Measurement, RelayState], 5000)
 
-    Logger.debug(fn -> "Subscribing to Measurement table events" end)
-    Mnesia.subscribe({:table, Measurement, :simple})
+    Enum.each([Measurement, RelayState], fn table ->
+      Logger.debug(fn -> "Subscribing to #{table} table events" end)
+      Mnesia.subscribe({:table, table, :simple})
+    end)
 
     {:ok, subscribers}
   end
@@ -81,15 +98,15 @@ defmodule Collector.Storage do
   end
 
   @impl true
-  @spec handle_cast({:publish, measurement}, state) :: {:noreply, state}
-  def handle_cast({:publish, measurement}, subscribers) do
+  @spec handle_cast({:publish, record}, state) :: {:noreply, state}
+  def handle_cast({:publish, record}, subscribers) do
     Logger.debug(fn ->
       receivers = Enum.map(subscribers, fn {pid, _} -> label(pid) end)
-      "Publishing #{measurement} to #{inspect(receivers)}"
+      "Publishing #{record} to #{inspect(receivers)}"
     end)
 
     Enum.each(subscribers, fn {pid, _} ->
-      Process.send(pid, {:new_record, measurement}, [])
+      Process.send(pid, {:new_record, record}, [])
     end)
 
     {:noreply, subscribers}
@@ -109,6 +126,9 @@ defmodule Collector.Storage do
       {:write, {Measurement, _, _} = measurement, _} ->
         measurement |> to_struct() |> publish()
 
+      {:write, {RelayState, _, _} = relay_state, _} ->
+        relay_state |> to_struct() |> publish()
+
       {type, record, _} ->
         Logger.debug(fn -> "Unhandled Mnesia #{type}: #{inspect(record)}" end)
     end
@@ -122,7 +142,7 @@ defmodule Collector.Storage do
   end
 
   @doc """
-  Reads measurements from the database. It requires a function that will be used to
+  Reads records from the database. It requires a function that will be used to
   fold data.
 
   ## Examples
@@ -146,7 +166,7 @@ defmodule Collector.Storage do
       ]
 
   """
-  @spec read((measurement, list(r) -> list(r)), Measurement) :: list(r) when r: any
+  @spec read((record, list(r) -> list(r)), table) :: list(r) when r: any
   def read(f, table_name) do
     fn -> Mnesia.foldl(& to_struct(&1) |> f.(&2), [], table_name) end
     |> Mnesia.transaction()
@@ -171,9 +191,9 @@ defmodule Collector.Storage do
   end
 
   @doc """
-  Writes a given measurement to the database.
+  Writes a given record to the database.
   """
-  @spec write(measurement) :: :ok | {:error, tuple}
+  @spec write(record) :: :ok | {:error, tuple}
   def write(%{} = struct) do
     fn ->
       struct
@@ -186,6 +206,10 @@ defmodule Collector.Storage do
 
   defp from_struct(%Measurement{id: id, value: value, timestamp: timestamp}) do
     {Measurement, {id, DateTime.to_unix(timestamp)}, value}
+  end
+
+  defp from_struct(%RelayState{label: l, value: value, timestamp: timestamp}) do
+    {RelayState, {l, DateTime.to_unix(timestamp)}, value}
   end
 
   defp handle_result({:atomic, result}), do: result
@@ -233,5 +257,10 @@ defmodule Collector.Storage do
   defp to_struct({Measurement, {id, unix}, value}) do
     {:ok, timestamp} = DateTime.from_unix(unix)
     %Measurement{id: id, value: value, timestamp: timestamp}
+  end
+
+  defp to_struct({RelayState, {label, unix}, value}) do
+    {:ok, timestamp} = DateTime.from_unix(unix)
+    %RelayState{label: label, value: value, timestamp: timestamp}
   end
 end

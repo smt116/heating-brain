@@ -34,7 +34,7 @@ defmodule Collector.Reader do
   @impl true
   @spec handle_info(:read_all, state) :: {:noreply, state}
   def handle_info(:read_all, state) do
-    Enum.each(read_all(), &write/1)
+    read_all() |> Enum.each(&write/1)
 
     schedule_next_read_after(@read_interval)
 

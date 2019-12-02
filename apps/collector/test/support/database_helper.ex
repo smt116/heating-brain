@@ -1,13 +1,17 @@
 defmodule Collector.DatabaseHelper do
   @moduledoc false
 
-  def clear_measurements_table do
-    {:atomic, :ok} =
+  def clear_tables do
+    Enum.each([
+      Collector.Measurement,
+      Collector.RelayState
+    ], fn table ->
       fn ->
-        Collector.Measurement
+        table
         |> :mnesia.all_keys()
-        |> Enum.each(& :mnesia.delete({Collector.Measurement, &1}))
+        |> Enum.each(& :mnesia.delete({table, &1}))
       end
       |> :mnesia.transaction()
+    end)
   end
 end

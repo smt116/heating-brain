@@ -9,11 +9,12 @@ defmodule Collector.StorageTest do
   ]
 
   alias Collector.Measurement
+  alias Collector.RelayState
 
   describe "write/1" do
-    property "writes a given struct into database" do
+    property "handles measurements" do
       check all measurement <- Generators.measurement() do
-        DatabaseHelper.clear_measurements_table()
+        DatabaseHelper.clear_tables()
 
         find = fn %{id: id} = item, acc ->
           if id === measurement.id do
@@ -28,10 +29,28 @@ defmodule Collector.StorageTest do
         assert [^measurement] = read(find, Measurement)
       end
     end
+
+    property "handles relays states" do
+      check all relay_state <- Generators.relay_state() do
+        DatabaseHelper.clear_tables()
+
+        find = fn %{label: label} = item, acc ->
+          if label === relay_state.label do
+            [item | acc]
+          else
+            acc
+          end
+        end
+
+        assert [] = read(find, RelayState)
+        assert :ok = write(relay_state)
+        assert [^relay_state] = read(find, RelayState)
+      end
+    end
   end
 
   describe "read/1" do
-    test "reads filtered data from a given table" do
+    test "reads filtered measurements" do
       measurement =
         Generators.measurement()
         |> ExUnitProperties.pick()
@@ -61,16 +80,47 @@ defmodule Collector.StorageTest do
       refute Enum.member?(measurements, expected)
       assert actual === expected
     end
+
+    test "reads filtered relays states" do
+      relay_state =
+        Generators.relay_state()
+        |> ExUnitProperties.pick()
+        |> Map.merge(%{value: true})
+      relays_states = [relay_state | Enum.take(Generators.relay_state(), 9)]
+
+      Enum.each(relays_states, &write/1)
+
+      with_expected_value = fn %{value: value} = item, acc ->
+        if value do
+          [item | acc]
+        else
+          acc
+        end
+      end
+
+      actual =
+        with_expected_value
+        |> read(RelayState)
+        |> Enum.sort_by(&{&1.label, &1.timestamp})
+
+      expected =
+        relays_states
+        |> Stream.filter(& &1.value)
+        |> Enum.sort_by(&{&1.label, &1.timestamp})
+
+      refute Enum.member?(relays_states, expected)
+      assert actual === expected
+    end
   end
 
   describe "subscribe/0" do
     test "subscribes to storage events" do
       :ok = subscribe()
 
-      measurement = ExUnitProperties.pick(Generators.measurement())
-      assert :ok = write(measurement)
+      record = ExUnitProperties.pick(Generators.record())
+      assert :ok = write(record)
 
-      assert_receive({:new_record, ^measurement})
+      assert_receive({:new_record, ^record})
 
       :ok = unsubscribe(self())
     end
@@ -80,11 +130,11 @@ defmodule Collector.StorageTest do
       :ok = subscribe()
       :ok = subscribe()
 
-      measurement = ExUnitProperties.pick(Generators.measurement())
-      assert :ok = write(measurement)
+      record = ExUnitProperties.pick(Generators.record())
+      assert :ok = write(record)
 
-      assert_receive({:new_record, ^measurement})
-      refute_receive({:new_record, ^measurement})
+      assert_receive({:new_record, ^record})
+      refute_receive({:new_record, ^record})
 
       :ok = unsubscribe(self())
     end
@@ -98,8 +148,8 @@ defmodule Collector.StorageTest do
 
       Process.exit(pid, :normal)
 
-      measurement = ExUnitProperties.pick(Generators.measurement())
-      assert :ok = write(measurement)
+      record = ExUnitProperties.pick(Generators.record())
+      assert :ok = write(record)
 
       refute_receive({:trace, ^pid, :receive, {:"$gen_cast", _}})
     end
@@ -115,8 +165,8 @@ defmodule Collector.StorageTest do
 
       unsubscribe(pid)
 
-      measurement = ExUnitProperties.pick(Generators.measurement())
-      assert :ok = write(measurement)
+      record = ExUnitProperties.pick(Generators.record())
+      assert :ok = write(record)
 
       refute_receive({:trace, ^pid, :receive, {:"$gen_cast", _}})
 

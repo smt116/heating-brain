@@ -20,8 +20,8 @@ defmodule Collector.Measurement do
   @doc """
   Initializes struct for a given reading. It assigns current timestamp.
   """
-  @spec initialize(raw_id, value) :: t
-  def initialize(id, value) when is_binary(id) and is_float(value) do
+  @spec new(raw_id, value) :: t
+  def new(id, value) when is_binary(id) and is_float(value) do
     %__MODULE__{
       id: String.to_atom(id),
       value: value,

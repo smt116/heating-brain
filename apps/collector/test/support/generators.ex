@@ -8,13 +8,16 @@ defmodule Collector.Generators do
   import StreamData
 
   alias Collector.Measurement
+  alias Collector.RelayState
 
   def id, do: atom(:alphanumeric)
 
   def measurement do
+    value = map(float(min: 16.0, max: 32.0), &Float.round(&1, 3))
+
     gen all id <- id(),
             timestamp <- timestamp(),
-            value <- value() do
+            value <- value do
       %Measurement{
         id: id,
         timestamp: timestamp,
@@ -23,12 +26,24 @@ defmodule Collector.Generators do
     end
   end
 
-  def timestamp do
+  def record, do: one_of([measurement(), relay_state()])
+
+  def relay_state do
+    gen all label <- id(),
+            timestamp <- timestamp(),
+            value <- boolean() do
+      %RelayState{
+        label: label,
+        timestamp: timestamp,
+        value: value
+      }
+    end
+  end
+
+  defp timestamp do
     map(
       positive_integer(),
       &utc_now() |> DateTime.add(- &1, :second) |> DateTime.truncate(:second)
     )
   end
-
-  def value, do: map(float(min: 16.0, max: 32.0), &Float.round(&1, 3))
 end

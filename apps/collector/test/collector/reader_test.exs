@@ -7,7 +7,7 @@ defmodule Collector.ReaderTest do
   alias Collector.Storage
 
   setup do
-    FilesystemGenerator.clear_sensors()
+    FilesystemGenerator.clear()
 
     :ok
   end

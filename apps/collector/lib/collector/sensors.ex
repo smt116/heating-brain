@@ -38,7 +38,7 @@ defmodule Collector.Sensors do
     |> Stream.map(fn {id, output} -> {id, extract_temperature(output)} end)
     |> Stream.reject(fn {_, check} -> check === :error end)
     |> Stream.map(fn {id, {:ok, value}} -> {id, Integer.parse(value)} end)
-    |> Enum.map(fn {id, {int, ""}} -> Measurement.initialize(id, int / 1000) end)
+    |> Enum.map(fn {id, {int, ""}} -> Measurement.new(id, int / 1000) end)
   end
 
   @doc """

@@ -3,10 +3,14 @@ defmodule Collector.Application do
 
   use Application
 
+  @impl true
   def start(_type, _args) do
+    # The order of children is important.
     children = [
-      {Collector.Reader, []},
-      {Collector.Storage, []}
+      {Collector.Storage, []},
+      {Collector.HeatingController, []},
+      {Collector.Controller, []},
+      {Collector.Reader, []}
     ]
 
     opts = [strategy: :one_for_one, name: Collector.Supervisor]

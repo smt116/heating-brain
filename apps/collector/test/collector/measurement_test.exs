@@ -3,15 +3,15 @@ defmodule Collector.MeasurementTest do
   use ExUnitProperties
   doctest String.Chars.Collector.Measurement
 
-  import Collector.Measurement, only: [initialize: 2]
+  import Collector.Measurement, only: [new: 2]
 
   alias Collector.Measurement
 
-  describe "initialize/2" do
+  describe "new/2" do
     property "converts attributes into the struct with timestamp" do
       check all raw_id <- string(:printable),
                 value <- float() do
-        assert %Measurement{} = measurement = initialize(raw_id, value)
+        assert %Measurement{} = measurement = new(raw_id, value)
 
         assert is_atom(measurement.id)
         assert measurement.id === String.to_atom(raw_id)
