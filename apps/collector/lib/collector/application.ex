@@ -13,7 +13,7 @@ defmodule Collector.Application do
       {Collector.Reader, []}
     ]
 
-    opts = [strategy: :one_for_one, name: Collector.Supervisor]
+    opts = [strategy: :rest_for_one, name: Collector.Supervisor]
     Supervisor.start_link(children, opts)
   end
 end
