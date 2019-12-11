@@ -7,4 +7,5 @@
 
 ## Resources
 
+* (Mnesia manual)[http://erlang.org/doc/man/mnesia.html]
 * (Raspberry Pi Pinout)[https://pinout.xyz/]
