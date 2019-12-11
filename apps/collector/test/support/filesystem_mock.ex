@@ -27,13 +27,12 @@ defmodule Collector.FilesystemMock do
           {@w1_slaves_path, {:file, ""}}
         ],
         Enum.map(@relays_map, &gpio_paths/1),
-        Enum.map(@sensors_map, &sensor_paths/1),
+        Enum.map(@sensors_map, &sensor_paths/1)
       ]
       |> List.flatten()
       |> Enum.map(fn {path, value} -> {String.to_atom(path), value} end)
 
-    state =
-      Keyword.put(paths, String.to_atom(@w1_slaves_path), w1_slaves_content(paths))
+    state = Keyword.put(paths, String.to_atom(@w1_slaves_path), w1_slaves_content(paths))
 
     {:ok, state}
   end
@@ -41,12 +40,15 @@ defmodule Collector.FilesystemMock do
   @impl true
   def handle_call(:clear, _pid, _state) do
     paths =
-      Enum.map([
-        {@gpio_path, :directory},
-        {@gpio_export_path, :driver},
-        {@w1_bus_path, :directory},
-        {@w1_slaves_path, {:file, ""}}
-      ], fn {path, value} -> {String.to_atom(path), value} end)
+      Enum.map(
+        [
+          {@gpio_path, :directory},
+          {@gpio_export_path, :driver},
+          {@w1_bus_path, :directory},
+          {@w1_slaves_path, {:file, ""}}
+        ],
+        fn {path, value} -> {String.to_atom(path), value} end
+      )
 
     {:reply, :ok, paths}
   end
@@ -76,6 +78,7 @@ defmodule Collector.FilesystemMock do
 
   def handle_call({:read!, path}, _pid, state) do
     value = Keyword.get(state, path)
+
     if is_nil(value) do
       {:reply, :error, state}
     else
@@ -84,11 +87,12 @@ defmodule Collector.FilesystemMock do
   end
 
   def handle_call(:refresh_w1_slaves_content, _pid, state) do
-    new_state = Keyword.put(
-      state,
-      String.to_atom(@w1_slaves_path),
-      w1_slaves_content(state)
-    )
+    new_state =
+      Keyword.put(
+        state,
+        String.to_atom(@w1_slaves_path),
+        w1_slaves_content(state)
+      )
 
     {:reply, :ok, new_state}
   end
@@ -171,6 +175,7 @@ defmodule Collector.FilesystemMock do
 
   defp gpio_paths(pin, direction \\ "out", value \\ "0\n")
   defp gpio_paths(p, d, v) when is_number(p), do: to_string(p) |> gpio_paths(d, v)
+
   defp gpio_paths(p, d, v) when is_binary(p) and is_binary(d) and is_binary(v) do
     [
       {Path.join([@gpio_path, p]), :directory},
@@ -192,6 +197,7 @@ defmodule Collector.FilesystemMock do
   defp sensor_paths(id, content \\ @sensor_output)
   defp sensor_paths({id, _, _}, content), do: sensor_paths(id, content)
   defp sensor_paths(id, c) when is_atom(id), do: to_string(id) |> sensor_paths(c)
+
   defp sensor_paths(id, content) when is_binary(id) and is_binary(content) do
     [
       {Path.join([@w1_bus_path, id]), :directory},
@@ -202,14 +208,12 @@ defmodule Collector.FilesystemMock do
   defp w1_slaves_content(paths) do
     {
       :file,
-      (
-        paths
-        |> Stream.filter(fn {path, _} -> is_sensor_path(path) end)
-        |> Stream.filter(fn {_, v} -> is_tuple(v) && elem(v, 0) === :file end)
-        |> Stream.map(fn {path, _} -> to_string(path) end)
-        |> Stream.map(&path_to_sensor_id/1)
-        |> Enum.join("\n")
-      ) <> "\n"
+      (paths
+       |> Stream.filter(fn {path, _} -> is_sensor_path(path) end)
+       |> Stream.filter(fn {_, v} -> is_tuple(v) && elem(v, 0) === :file end)
+       |> Stream.map(fn {path, _} -> to_string(path) end)
+       |> Stream.map(&path_to_sensor_id/1)
+       |> Enum.join("\n")) <> "\n"
     }
   end
 end

@@ -26,26 +26,26 @@ defmodule Collector.RelaysTest do
           relay_states
           |> Enum.group_by(& &1.label)
           |> Enum.map(fn {label, values} ->
-          {
-            label,
-            values
-            |> Stream.map(&{&1.timestamp, &1.value})
-            |> Enum.max_by(&elem(&1, 0))
-          }
-        end)
+            {
+              label,
+              values
+              |> Stream.map(&{&1.timestamp, &1.value})
+              |> Enum.max_by(&elem(&1, 0))
+            }
+          end)
 
-          assert Enum.sort(current()) === Enum.sort(expected_response)
+        assert Enum.sort(current()) === Enum.sort(expected_response)
       end
     end
   end
 
   describe "put_state/1" do
     test "writes the new state to the filesystem" do
-      assert read_all() |> Enum.find(& &1.label === :valve1 && &1.value === false)
+      assert read_all() |> Enum.find(&(&1.label === :valve1 && &1.value === false))
 
       RelayState.new(:valve1, true) |> put_state()
 
-      assert read_all() |> Enum.find(& &1.label === :valve1 && &1.value === true)
+      assert read_all() |> Enum.find(&(&1.label === :valve1 && &1.value === true))
     end
 
     test "writes the new state to the storage" do
@@ -61,11 +61,11 @@ defmodule Collector.RelaysTest do
     test "does not change the state if it is already set" do
       RelayState.new(:valve1, true) |> put_state()
 
-      assert read_all() |> Enum.find(& &1.label === :valve1 && &1.value === true)
+      assert read_all() |> Enum.find(&(&1.label === :valve1 && &1.value === true))
 
       RelayState.new(:valve1, true) |> put_state()
 
-      assert read_all() |> Enum.find(& &1.label === :valve1 && &1.value === true)
+      assert read_all() |> Enum.find(&(&1.label === :valve1 && &1.value === true))
     end
   end
 
@@ -75,43 +75,43 @@ defmodule Collector.RelaysTest do
       FilesystemMock.set_relay(:valve1, true)
 
       assert [
-        %RelayState{
-          label: :circulation,
-          value: false
-        },
-        %RelayState{
-          label: :heating,
-          value: true
-        },
-        %RelayState{
-          label: :pump,
-          value: false
-        },
-        %RelayState{
-          label: :valve1,
-          value: true
-        },
-        %RelayState{
-          label: :valve2,
-          value: false
-        },
-        %RelayState{
-          label: :valve3,
-          value: false
-        },
-        %RelayState{
-          label: :valve4,
-          value: false
-        },
-        %RelayState{
-          label: :valve5,
-          value: false
-        },
-        %RelayState{
-          label: :valve6,
-          value: false
-        }
-      ] = read_all()
+               %RelayState{
+                 label: :circulation,
+                 value: false
+               },
+               %RelayState{
+                 label: :heating,
+                 value: true
+               },
+               %RelayState{
+                 label: :pump,
+                 value: false
+               },
+               %RelayState{
+                 label: :valve1,
+                 value: true
+               },
+               %RelayState{
+                 label: :valve2,
+                 value: false
+               },
+               %RelayState{
+                 label: :valve3,
+                 value: false
+               },
+               %RelayState{
+                 label: :valve4,
+                 value: false
+               },
+               %RelayState{
+                 label: :valve5,
+                 value: false
+               },
+               %RelayState{
+                 label: :valve6,
+                 value: false
+               }
+             ] = read_all()
     end
   end
 
@@ -123,7 +123,7 @@ defmodule Collector.RelaysTest do
         paths = FilesystemMock.paths()
 
         Enum.all?(@relays_map, fn {_, pin, _} ->
-          Enum.find(paths, & &1 === "/sys/class/gpio/#{pin}/value") |> is_binary()
+          Enum.find(paths, &(&1 === "/sys/class/gpio/#{pin}/value")) |> is_binary()
         end)
       end
 

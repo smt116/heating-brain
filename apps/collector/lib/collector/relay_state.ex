@@ -10,11 +10,11 @@ defmodule Collector.RelayState do
   @type value :: boolean
 
   @type t ::
-  %__MODULE__{
-    label: label,
-    value: boolean,
-    timestamp: DateTime.t()
-  }
+          %__MODULE__{
+            label: label,
+            value: boolean,
+            timestamp: DateTime.t()
+          }
 
   @doc """
   Initializes struct for a given state. It assigns current timestamp.

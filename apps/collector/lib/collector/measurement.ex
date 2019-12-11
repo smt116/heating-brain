@@ -11,11 +11,11 @@ defmodule Collector.Measurement do
   @type value :: float
 
   @type t ::
-  %__MODULE__{
-    id: id,
-    value: float,
-    timestamp: DateTime.t()
-  }
+          %__MODULE__{
+            id: id,
+            value: float,
+            timestamp: DateTime.t()
+          }
 
   @doc """
   Initializes struct for a given reading. It assigns current timestamp.

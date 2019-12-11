@@ -47,7 +47,7 @@ defmodule Collector.Controller do
   end
 
   defp write_relay_state(%Measurement{id: id} = measurement) do
-    item = Enum.find(@sensors_map, &elem(&1, 0) === id)
+    item = Enum.find(@sensors_map, &(elem(&1, 0) === id))
 
     if is_nil(item) do
       Logger.info(fn -> "There is no mapping for #{id} sensor" end)

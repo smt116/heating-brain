@@ -43,7 +43,7 @@ defmodule Collector.Generators do
   defp timestamp do
     map(
       positive_integer(),
-      &utc_now() |> DateTime.add(- &1, :second) |> DateTime.truncate(:second)
+      &(utc_now() |> DateTime.add(-&1, :second) |> DateTime.truncate(:second))
     )
   end
 end

@@ -20,7 +20,7 @@ defmodule Collector.ControllerTest do
     Measurement.new("28-01187615e4ff", 24.0) |> write()
     assert_receive({:new_record, %RelayState{label: :valve1, value: true}})
 
-    refute read_all() |> Enum.find(& &1.label === :valve1 && &1.value) |> is_nil()
+    refute read_all() |> Enum.find(&(&1.label === :valve1 && &1.value)) |> is_nil()
   end
 
   test "disables valve when the sensor reports temperature higher than expected" do
@@ -28,7 +28,7 @@ defmodule Collector.ControllerTest do
     Measurement.new("28-01187615e4ff", 26.0) |> write()
     assert_receive({:new_record, %RelayState{label: :valve1, value: false}})
 
-    assert read_all() |> Enum.find(& &1.label === :valve1 && &1.value) |> is_nil()
+    assert read_all() |> Enum.find(&(&1.label === :valve1 && &1.value)) |> is_nil()
   end
 
   test "ignores sensor without relevant valve" do

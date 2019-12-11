@@ -1,12 +1,13 @@
 defmodule Collector.StorageTest do
   use Collector.DataCase, async: false
 
-  import Collector.Storage, only: [
-    read: 2,
-    subscribe: 0,
-    unsubscribe: 1,
-    write: 1
-  ]
+  import Collector.Storage,
+    only: [
+      read: 2,
+      subscribe: 0,
+      unsubscribe: 1,
+      write: 1
+    ]
 
   alias Collector.Measurement
   alias Collector.RelayState
@@ -55,6 +56,7 @@ defmodule Collector.StorageTest do
         Generators.measurement()
         |> ExUnitProperties.pick()
         |> Map.merge(%{value: 10.0})
+
       measurements = [measurement | Enum.take(Generators.measurement(), 9)]
 
       Enum.each(measurements, &write/1)
@@ -74,7 +76,7 @@ defmodule Collector.StorageTest do
 
       expected =
         measurements
-        |> Stream.filter(& &1.value > 15.0)
+        |> Stream.filter(&(&1.value > 15.0))
         |> Enum.sort_by(&{&1.id, &1.timestamp})
 
       refute Enum.member?(measurements, expected)
@@ -86,6 +88,7 @@ defmodule Collector.StorageTest do
         Generators.relay_state()
         |> ExUnitProperties.pick()
         |> Map.merge(%{value: true})
+
       relays_states = [relay_state | Enum.take(Generators.relay_state(), 9)]
 
       Enum.each(relays_states, &write/1)
@@ -140,10 +143,15 @@ defmodule Collector.StorageTest do
     end
 
     test "ensures process is usubscribed when it dies" do
-      pid = Process.spawn(fn ->
-        :ok = subscribe()
-        Process.sleep(5_000)
-      end, [])
+      pid =
+        Process.spawn(
+          fn ->
+            :ok = subscribe()
+            Process.sleep(5_000)
+          end,
+          []
+        )
+
       :erlang.trace(pid, true, [:receive])
 
       Process.exit(pid, :normal)
@@ -157,10 +165,15 @@ defmodule Collector.StorageTest do
 
   describe "unsubscribe/0" do
     test "unsubscribes from storage events" do
-      pid = Process.spawn(fn ->
-        :ok = subscribe()
-        Process.sleep(5_000)
-      end, [])
+      pid =
+        Process.spawn(
+          fn ->
+            :ok = subscribe()
+            Process.sleep(5_000)
+          end,
+          []
+        )
+
       :erlang.trace(pid, true, [:receive])
 
       unsubscribe(pid)

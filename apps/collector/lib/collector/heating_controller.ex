@@ -57,9 +57,10 @@ defmodule Collector.HeatingController do
 
   @spec start_link(state) :: GenServer.on_start()
   def start_link(state) do
-    state = Enum.reduce(@initial_state, state, fn {key, value}, acc ->
-      Keyword.put_new(acc, key, value)
-    end)
+    state =
+      Enum.reduce(@initial_state, state, fn {key, value}, acc ->
+        Keyword.put_new(acc, key, value)
+      end)
 
     GenServer.start_link(__MODULE__, state, name: __MODULE__)
   end

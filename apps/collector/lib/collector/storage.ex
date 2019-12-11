@@ -33,12 +33,13 @@ defmodule Collector.Storage do
   @typep db_r_delete :: {:delete, {RelayState, db_r_key}, term}
 
   @typep mnesia_table_event ::
-    {:mnesia_table_event, db_m_write
-                        | db_m_delete_object
-                        | db_m_delete
-                        | db_r_write
-                        | db_r_delete_object
-                        | db_r_delete}
+           {:mnesia_table_event,
+            db_m_write
+            | db_m_delete_object
+            | db_m_delete
+            | db_r_write
+            | db_r_delete_object
+            | db_r_delete}
 
   @opaque state :: list({pid, reference})
 
@@ -168,7 +169,7 @@ defmodule Collector.Storage do
   """
   @spec read((record, list(r) -> list(r)), table) :: list(r) when r: any
   def read(f, table_name) do
-    fn -> Mnesia.foldl(& to_struct(&1) |> f.(&2), [], table_name) end
+    fn -> Mnesia.foldl(&(to_struct(&1) |> f.(&2)), [], table_name) end
     |> Mnesia.transaction()
     |> handle_result()
   end
@@ -213,6 +214,7 @@ defmodule Collector.Storage do
   end
 
   defp handle_result({:atomic, result}), do: result
+
   defp handle_result({:aborted, reason}) do
     Logger.error(fn -> "Reading failed: #{inspect(reason)}" end)
 
@@ -220,6 +222,7 @@ defmodule Collector.Storage do
   end
 
   defp handle_result({:atomic, :ok}, _struct), do: :ok
+
   defp handle_result({:aborted, reason}, struct) do
     Logger.error(fn -> "Writing #{struct} failed: #{reason}" end)
 

@@ -24,9 +24,9 @@ defmodule Collector.ReaderTest do
       Enum.each(1..2, fn _ -> assert_receive({:new_record, _}, 1_000) end)
 
       assert [
-        bar: [{_, 24.011}],
-        foo: [{_, 23.187}]
-      ] = get() |> Enum.sort()
+               bar: [{_, 24.011}],
+               foo: [{_, 23.187}]
+             ] = get() |> Enum.sort()
 
       :ok = Storage.unsubscribe(self())
     end

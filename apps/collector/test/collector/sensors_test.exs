@@ -16,17 +16,17 @@ defmodule Collector.SensorsTest do
       FilesystemMock.set_sensor(:bar, 24.011)
 
       assert [
-        %Collector.Measurement{
-          id: :bar,
-          timestamp: _,
-          value: 24.011
-        },
-        %Collector.Measurement{
-          id: :foo,
-          timestamp: _,
-          value: 23.187
-        }
-      ] = read_all()
+               %Collector.Measurement{
+                 id: :bar,
+                 timestamp: _,
+                 value: 24.011
+               },
+               %Collector.Measurement{
+                 id: :foo,
+                 timestamp: _,
+                 value: 23.187
+               }
+             ] = read_all()
     end
 
     test "does not include malformed readings" do
@@ -50,7 +50,7 @@ defmodule Collector.SensorsTest do
             {
               id,
               values
-              |> Stream.uniq_by(& {id, &1.timestamp})
+              |> Stream.uniq_by(&{id, &1.timestamp})
               |> Stream.map(&{&1.timestamp, &1.value})
               |> Enum.sort_by(&elem(&1, 0))
             }
@@ -70,8 +70,8 @@ defmodule Collector.SensorsTest do
 
       Enum.each(measurements, &write/1)
 
-      assert [{^id1, _}] = get(& &1.id == id1)
-      assert get(& &1.value == value) |> Enum.any?(fn {id, _} -> id === id2 end)
+      assert [{^id1, _}] = get(&(&1.id == id1))
+      assert get(&(&1.value == value)) |> Enum.any?(fn {id, _} -> id === id2 end)
     end
   end
 end

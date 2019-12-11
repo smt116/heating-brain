@@ -130,7 +130,7 @@ defmodule Collector.Relays do
   end
 
   defp relay_directory_path(label) do
-    {_label, pin, _direction} = Enum.find(@relays_map, & elem(&1, 0) === label)
+    {_label, pin, _direction} = Enum.find(@relays_map, &(elem(&1, 0) === label))
 
     Path.join([@gpio_base_path, to_string(pin)])
   end

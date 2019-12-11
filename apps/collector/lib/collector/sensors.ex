@@ -69,13 +69,15 @@ defmodule Collector.Sensors do
       ]
 
   """
-  @spec get((Measurement.t() -> boolean)) :: [{Measurement.id(), list({DateTime.t(), Measurement.value()})}]
-  def get(f \\ & &1 === &1) when is_function(f) do
+  @spec get((Measurement.t() -> boolean)) :: [
+          {Measurement.id(), list({DateTime.t(), Measurement.value()})}
+        ]
+  def get(f \\ &(&1 === &1)) when is_function(f) do
     fn %{id: id, value: value, timestamp: timestamp} = item, acc ->
       if f.(item) do
         acc
         |> Keyword.put_new(id, [])
-        |> Keyword.get_and_update(id, & {&1, [{timestamp, value} | &1]})
+        |> Keyword.get_and_update(id, &{&1, [{timestamp, value} | &1]})
         |> elem(1)
       else
         acc
@@ -93,9 +95,9 @@ defmodule Collector.Sensors do
     time_boundary =
       DateTime.utc_now()
       |> DateTime.truncate(:second)
-      |> DateTime.add(- within, :second)
+      |> DateTime.add(-within, :second)
 
-    get(& DateTime.compare(&1.timestamp, time_boundary) === :gt)
+    get(&(DateTime.compare(&1.timestamp, time_boundary) === :gt))
   end
 
   # The 1-wire master bus directory includes `w1_master_slaves` file which
