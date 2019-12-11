@@ -22,7 +22,7 @@ defmodule Collector.HeatingController do
 
   @heating_label :heating
   @initial_state [timer: nil, valves: []]
-  @timer 5_000
+  @timer Application.get_env(:collector, :heating_controller_timer)
 
   @impl true
   @spec init(state) :: {:ok, state}
