@@ -49,8 +49,14 @@ defmodule Collector.SensorsTest do
     test "reads measurements from the filesystem" do
       FilesystemMock.set_sensor(:foo, 23.187)
       FilesystemMock.set_sensor(:bar, 24.011)
+      FilesystemMock.set_sensor(:baz, -0.125)
 
       assert [
+               %Collector.Measurement{
+                 id: :baz,
+                 timestamp: _,
+                 value: -0.125
+               },
                %Collector.Measurement{
                  id: :bar,
                  timestamp: _,
