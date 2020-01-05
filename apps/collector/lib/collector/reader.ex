@@ -8,19 +8,17 @@ defmodule Collector.Reader do
 
   require Logger
 
+  import Application, only: [get_env: 2]
   import Collector.Sensors, only: [read_all: 0]
   import Collector.Storage, only: [write: 1]
 
   @opaque state :: []
 
-  @read_interval Application.get_env(:collector, :read_interval)
-  @read_initial_delay Application.get_env(:collector, :read_initial_delay)
-
   @impl true
   @spec init(state) :: {:ok, state}
   def init(state) do
-    if Application.get_env(:collector, :read_initial_enabled) do
-      schedule_next_read_after(@read_initial_delay)
+    if get_env(:collector, :read_initial_enabled) do
+      get_env(:collector, :read_initial_delay) |> schedule_next_read_after()
     end
 
     {:ok, state}
@@ -36,7 +34,7 @@ defmodule Collector.Reader do
   def handle_info(:read_all, state) do
     read_all() |> Enum.each(&write/1)
 
-    schedule_next_read_after(@read_interval)
+    get_env(:collector, :read_interval) |> schedule_next_read_after()
 
     {:noreply, state}
   end

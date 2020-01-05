@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+set -e
+
+green=`tput setaf 2`
+yellow=`tput setaf 3`
+blue=`tput setaf 4`
+reset=`tput sgr0`
+
+function label() {
+  echo
+  echo "${green}$1${reset}"
+}
+
+function run() {
+  echo "${blue}Running ${yellow}$@${reset}"
+  eval $@
+}
+
+label "Uploading files to the server"
+run rsync -rav --exclude .git --exclude _build --exclude tmp --exclude mnesia --prune-empty-dirs . brain:/opt/brain
+
+label "Compiling and restarting the application"
+run "ssh brain \"/bin/systemctl --user restart brain\""

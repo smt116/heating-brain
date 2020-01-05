@@ -7,7 +7,8 @@ defmodule Collector.Controller do
 
   require Logger
 
-  import Collector.Relays, only: [put_state: 1, read_all: 0]
+  import Application, only: [get_env: 2]
+  import Collector.Relays, only: [put_state: 1, read_all: 0, setup_all: 0]
   import Collector.Storage, only: [write: 1]
 
   alias Collector.Measurement
@@ -18,13 +19,12 @@ defmodule Collector.Controller do
 
   @typep record :: Measurement.t() | RelayState.t()
 
-  @sensors_map Application.get_env(:collector, :sensors_map)
-
   @impl true
   @spec init(state) :: {:ok, state}
   def init(state) do
     Storage.subscribe()
 
+    setup_all()
     read_all() |> Enum.each(&write/1)
 
     {:ok, state}
@@ -47,7 +47,7 @@ defmodule Collector.Controller do
   end
 
   defp write_relay_state(%Measurement{id: id} = measurement) do
-    item = Enum.find(@sensors_map, &(elem(&1, 0) === id))
+    item = get_env(:collector, :sensors_map) |> Enum.find(&(elem(&1, 0) === id))
 
     if is_nil(item) do
       Logger.info(fn -> "There is no mapping for #{id} sensor" end)

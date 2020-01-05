@@ -1,0 +1,24 @@
+[Unit]
+Description=Brain Application
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/brain
+Environment="MIX_ENV=prod"
+
+ExecStartPre=/usr/bin/mix release --overwrite
+ExecStart=/opt/brain/_build/prod/rel/brain/bin/brain start
+ExecStop=/opt/brain/_build/prod/rel/brain/bin/brain stop
+
+Restart=always
+RestartSec=5
+
+OOMScoreAdjust=500
+
+StandardError=syslog
+StandardOutput=syslog
+SyslogIdentifier=brain
+
+[Install]
+WantedBy=multi-user.target

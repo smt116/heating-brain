@@ -6,12 +6,12 @@ defmodule Collector.Relays do
 
   require Logger
 
+  import Application, only: [get_env: 2]
+
   alias Collector.RelayState
   alias Collector.Storage
 
-  @gpio_base_path Application.get_env(:collector, :gpio_base_path)
   @handler Application.get_env(:collector, :filesystem_handler)
-  @relays_map Application.get_env(:collector, :relays_map)
 
   @type label :: RelayState.label()
   @type timestamp :: DateTime.t()
@@ -97,13 +97,13 @@ defmodule Collector.Relays do
   """
   @spec read_all :: list(RelayState.t())
   def read_all do
-    @relays_map
+    get_env(:collector, :relays_map)
     |> Stream.map(fn {label, _pin, _direction} -> {label, relay_value(label)} end)
     |> Enum.map(fn {label, state} -> RelayState.new(label, state) end)
   end
 
   @spec setup_all :: :ok
-  def setup_all, do: Enum.each(@relays_map, &setup/1)
+  def setup_all, do: get_env(:collector, :relays_map) |> Enum.each(&setup/1)
 
   defp boolean_to_raw_value(true), do: "1"
   defp boolean_to_raw_value(false), do: "0"
@@ -130,9 +130,10 @@ defmodule Collector.Relays do
   end
 
   defp relay_directory_path(label) do
-    {_label, pin, _direction} = Enum.find(@relays_map, &(elem(&1, 0) === label))
+    {_label, pin, _direction} =
+      get_env(:collector, :relays_map) |> Enum.find(&(elem(&1, 0) === label))
 
-    Path.join([@gpio_base_path, to_string(pin)])
+    Path.join([get_env(:collector, :gpio_base_path), "gpio#{to_string(pin)}"])
   end
 
   defp relay_raw_value(label) do
@@ -159,14 +160,18 @@ defmodule Collector.Relays do
       Logger.debug(fn -> "Pin #{pin} for #{label} is already exported" end)
     else
       Logger.info(fn -> "Exporing pin #{pin} for #{label}" end)
-      Path.join(@gpio_base_path, "export") |> @handler.write!(to_string(pin))
+
+      :ok =
+        get_env(:collector, :gpio_base_path)
+        |> Path.join("export")
+        |> @handler.write!(to_string(pin))
     end
 
     if relay_direction(label) === direction do
       Logger.debug(fn -> "Pin #{pin} for #{label} is already as #{direction}" end)
     else
       Logger.info(fn -> "Setting up pin #{pin} as #{direction} for #{label}" end)
-      label |> relay_direction() |> @handler.write!(direction)
+      :ok = label |> relay_direction_path() |> @handler.write!(direction)
     end
 
     :ok

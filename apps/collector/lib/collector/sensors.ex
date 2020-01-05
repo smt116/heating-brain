@@ -166,10 +166,10 @@ defmodule Collector.Sensors do
 
     if String.ends_with?(first, "YES") do
       raw_temperature =
-
         ~r/t=(?<temperature>[-\d]+)/
         |> Regex.named_captures(second)
         |> Map.fetch!("temperature")
+
       {:ok, raw_temperature}
     else
       :error

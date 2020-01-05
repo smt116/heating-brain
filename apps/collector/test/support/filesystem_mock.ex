@@ -178,9 +178,9 @@ defmodule Collector.FilesystemMock do
 
   defp gpio_paths(p, d, v) when is_binary(p) and is_binary(d) and is_binary(v) do
     [
-      {Path.join([@gpio_path, p]), :directory},
-      {Path.join([@gpio_path, p, "value"]), {:file, v}},
-      {Path.join([@gpio_path, p, "direction"]), {:file, d <> "\n"}}
+      {Path.join([@gpio_path, "gpio#{p}"]), :directory},
+      {Path.join([@gpio_path, "gpio#{p}", "value"]), {:file, v}},
+      {Path.join([@gpio_path, "gpio#{p}", "direction"]), {:file, d <> "\n"}}
     ]
   end
 

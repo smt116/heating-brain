@@ -7,6 +7,7 @@ defmodule Brain.MixProject do
       apps_path: "apps",
       deps: deps(),
       dialyzer: dialyzer(),
+      releases: releases(),
       start_permanent: Mix.env() == :prod,
       version: "0.1.0"
     ]
@@ -40,6 +41,18 @@ defmodule Brain.MixProject do
         :error_handling,
         :race_conditions,
         :underspecs
+      ]
+    ]
+  end
+
+  defp releases do
+    [
+      brain: [
+        applications: [
+          collector: :permanent,
+          mnesia: :load,
+          runtime_tools: :permanent
+        ]
       ]
     ]
   end

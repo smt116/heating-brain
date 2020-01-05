@@ -21,7 +21,7 @@ config :collector,
   heating_controller_timer: 5_000,
   read_initial_delay: 1_000,
   read_initial_enabled: if(Mix.env() === :test, do: false, else: true),
-  read_interval: 10_000,
+  read_interval: 15_000,
   relays_map: [
     {:circulation, 21, "out"},
     {:heating, 11, "out"},
@@ -35,7 +35,8 @@ config :collector,
   ],
   sensors_map: [
     {:"28-01187615e4ff", :valve1, 25.0},
-    {:"28-0118761f69ff", :valve2, 23.5}
+    {:"28-01187654b6ff", :valve2, 23.5},
+    {:"28-0118761f69ff", :valve3, 3.5}
   ],
   w1_bus_master1_path: "/sys/bus/w1/devices/w1_bus_master1"
 
