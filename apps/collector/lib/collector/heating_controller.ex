@@ -36,7 +36,12 @@ defmodule Collector.HeatingController do
   @spec handle_info({:new_record, record}, state) :: {:noreply, state}
   def handle_info({:new_record, %RelayState{} = relay_state}, state) do
     if changes_heating_relay_state?(relay_state, state) do
-      {:noreply, schedule_heating_state_update(relay_state, state)}
+      new_state =
+        state
+        |> put_in([:valves, relay_state.label], relay_state.value)
+        |> schedule_heating_state_update()
+
+      {:noreply, new_state}
     else
       {:noreply, state}
     end
@@ -47,7 +52,7 @@ defmodule Collector.HeatingController do
 
   @spec handle_info(:put_heating_state, state) :: {:noreply, state}
   def handle_info(:put_heating_state, state) do
-    relay_state = Enum.any?(state[:valves])
+    relay_state = any_valve_enabled?(state[:valves])
 
     Logger.debug(fn -> "Opened valves: #{inspect(state[:valves])}" end)
     RelayState.new(@heating_label, relay_state) |> put_state()
@@ -78,12 +83,23 @@ defmodule Collector.HeatingController do
 
   defp is_for_valve?(l), do: to_string(l) |> String.starts_with?("valve")
 
-  defp schedule_heating_state_update(%RelayState{} = relay_state, state) do
+  defp schedule_heating_state_update(state) do
     cancel_timer(state[:timer])
-    timer = Process.send_after(self(), :put_heating_state, @timer)
+    delay = put_heating_state_delay(state[:valves])
+    timer = Process.send_after(self(), :put_heating_state, delay)
 
-    state
-    |> put_in([:valves, relay_state.label], relay_state.value)
-    |> put_in([:timer], timer)
+    put_in(state, [:timer], timer)
+  end
+
+  def put_heating_state_delay(valves_states) do
+    if any_valve_enabled?(valves_states) do
+      @timer
+    else
+      0
+    end
+  end
+
+  def any_valve_enabled?(valves_states) do
+    Enum.any?(valves_states, fn {_label, value} -> value end)
   end
 end
