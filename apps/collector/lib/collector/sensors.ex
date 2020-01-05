@@ -7,8 +7,42 @@ defmodule Collector.Sensors do
   alias Collector.Measurement
   alias Collector.Storage
 
+  @type simplified_measurement :: {Measurement.id(), list({DateTime.t(), value})}
+  @type timestamp :: DateTime.t()
+  @type value :: Measurement.value()
+
   @handler Application.get_env(:collector, :filesystem_handler)
   @w1_bus_master1_path Application.get_env(:collector, :w1_bus_master1_path)
+
+  @doc """
+  Reads latest measurements.
+
+  ## Examples
+
+      iex> Collector.Sensors.current()
+      [
+        "28-01187615e4ff": {~U[2019-12-11 21:51:14Z], 22.0},
+        "28-0118761f69ff": {~U[2019-12-11 21:51:14Z], 22.0}
+      ]
+
+  """
+  @spec current :: [simplified_measurement]
+  def current do
+    # In fact, it should be :mnesia.last with ordered_set table but this kind of
+    # semantic is not supported for disc_only_copies.
+    #
+    # FIXME: use disc_copies semantic
+    #        http://erlang.org/doc/man/mnesia.html#description
+    fn %{id: id, value: value, timestamp: timestamp}, acc ->
+      acc
+      |> Keyword.put_new(id, nil)
+      |> Keyword.get_and_update(id, &{&1, newer(&1, {timestamp, value})})
+      |> elem(1)
+      |> Enum.reject(fn {_id, value} -> is_nil(value) end)
+    end
+    |> Storage.read(Measurement)
+    |> Enum.sort()
+  end
 
   @doc """
   Reads current values from the file system via the 1-wire master bus. It does not
@@ -69,9 +103,8 @@ defmodule Collector.Sensors do
       ]
 
   """
-  @spec get((Measurement.t() -> boolean)) :: [
-          {Measurement.id(), list({DateTime.t(), Measurement.value()})}
-        ]
+  # FIXME: support get_and_update function as the argument and extract this (as duplicated in relasy)
+  @spec get((Measurement.t() -> boolean)) :: [simplified_measurement]
   def get(f \\ &(&1 === &1)) when is_function(f) do
     fn %{id: id, value: value, timestamp: timestamp} = item, acc ->
       if f.(item) do
@@ -137,4 +170,10 @@ defmodule Collector.Sensors do
       :error
     end
   end
+
+  # FIXME: duplicated in `Relays` module
+  @spec newer({timestamp, value}, {timestamp, value}) :: {timestamp, value}
+  defp newer(nil, candidate), do: candidate
+  defp newer({a, _} = current, {b, _}) when a >= b, do: current
+  defp newer(_current, candidate), do: candidate
 end

@@ -22,6 +22,29 @@ defmodule Collector.SensorsTest do
     :ok
   end
 
+  describe "current/0" do
+    property "fetches latest values for each measurement from database" do
+      check all measurements <- list_of(Generators.measurement()) do
+        DatabaseHelper.clear_tables()
+        Enum.each(measurements, &write/1)
+
+        expected_response =
+          measurements
+          |> Enum.group_by(& &1.id)
+          |> Enum.map(fn {id, values} ->
+            {
+              id,
+              values
+              |> Stream.map(&{&1.timestamp, &1.value})
+              |> Enum.max_by(&elem(&1, 0))
+            }
+          end)
+
+        assert Enum.sort(current()) === Enum.sort(expected_response)
+      end
+    end
+  end
+
   describe "read_all/0" do
     test "reads measurements from the filesystem" do
       FilesystemMock.set_sensor(:foo, 23.187)

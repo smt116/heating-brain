@@ -15,6 +15,7 @@ defmodule Collector do
   defdelegate get_sensor, to: Sensors, as: :get
   defdelegate latest_sensors_readings(within), to: Sensors, as: :latest
   defdelegate latest_sensors_readings, to: Sensors, as: :latest
+  defdelegate sensors_values, to: Sensors, as: :current
 
   defdelegate subscribe, to: Collector.Storage
   defdelegate unsubscribe(pid), to: Collector.Storage

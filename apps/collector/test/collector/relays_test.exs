@@ -22,6 +22,7 @@ defmodule Collector.RelaysTest do
 
       check all relay_states <- list_of(Generators.relay_state()) do
         DatabaseHelper.clear_tables()
+
         Enum.each(relay_states, fn state ->
           :ok = write(state)
 
