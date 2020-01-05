@@ -1,11 +1,23 @@
 defmodule Collector.SensorsTest do
   use Collector.DataCase, async: false
 
-  import Collector.Sensors, only: [get: 0, get: 1, read_all: 0]
-  import Collector.Storage, only: [write: 1]
+  import Collector.Sensors, only: [current: 0, get: 0, get: 1, read_all: 0]
+
+  alias Collector.Measurement
+  alias Collector.Storage
 
   setup do
     FilesystemMock.clear()
+    :ok = Storage.subscribe()
+
+    :ok
+  end
+
+  def write(%Measurement{} = measurement) do
+    :ok = Storage.write(measurement)
+
+    # Make sure that the storage had processed the message.
+    assert_receive({:new_record, %Measurement{}})
 
     :ok
   end

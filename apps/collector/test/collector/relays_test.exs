@@ -18,9 +18,16 @@ defmodule Collector.RelaysTest do
 
   describe "current/0" do
     property "fetches latest states for each relay from the database" do
+      :ok = Storage.subscribe()
+
       check all relay_states <- list_of(Generators.relay_state()) do
         DatabaseHelper.clear_tables()
-        Enum.each(relay_states, &write/1)
+        Enum.each(relay_states, fn state ->
+          :ok = write(state)
+
+          # Make sure that the storage had processed the message.
+          assert_receive({:new_record, %RelayState{}})
+        end)
 
         expected_response =
           relay_states
@@ -36,6 +43,8 @@ defmodule Collector.RelaysTest do
 
         assert Enum.sort(current()) === Enum.sort(expected_response)
       end
+
+      :ok = self() |> Storage.unsubscribe()
     end
   end
 
