@@ -49,6 +49,8 @@ defmodule Collector.Storage do
   @spec init(state) :: {:ok, state}
   def init(subscribers) do
     Logger.debug(fn -> "Initializing Mnesia database" end)
+    :ok = File.mkdir_p("mnesia")
+
     Mnesia.create_schema([node()])
 
     :ok = Mnesia.start()
