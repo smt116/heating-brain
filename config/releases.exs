@@ -22,4 +22,4 @@ config :collector,
     {:"28-0118761f69ff", :valve3, 3.5}
   ]
 
-config :logger, :console, level: :debug
+config :logger, :console, level: :info
