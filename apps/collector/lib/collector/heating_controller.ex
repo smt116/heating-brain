@@ -60,6 +60,15 @@ defmodule Collector.HeatingController do
     {:noreply, state}
   end
 
+  @impl true
+  def terminate(reason, _state) do
+    Logger.info(fn ->
+      "Disabling heating relay due to termination (#{inspect(reason)})"
+    end)
+
+    RelayState.new(@heating_label, false) |> put_state()
+  end
+
   @spec start_link(state) :: GenServer.on_start()
   def start_link(state) do
     state =

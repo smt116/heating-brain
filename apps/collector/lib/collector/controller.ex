@@ -71,6 +71,18 @@ defmodule Collector.Controller do
     {:noreply, new_state}
   end
 
+  @impl true
+  def terminate(reason, state) do
+    Logger.info(fn ->
+      "Disabling all relays due to termination (#{inspect(reason)})"
+    end)
+
+    get_env(:collector, :relays_map)
+    |> Stream.map(fn {label, _pin, _direction} -> label end)
+    |> Stream.filter(&(&1 |> to_string() |> String.starts_with?("valve")))
+    |> Enum.each(&(RelayState.new(&1, false) |> put_state()))
+  end
+
   @spec start_link(state) :: GenServer.on_start()
   def start_link(state) do
     GenServer.start_link(__MODULE__, state, name: __MODULE__)
