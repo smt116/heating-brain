@@ -22,6 +22,7 @@ config :collector,
   read_initial_delay: 1_000,
   read_initial_enabled: if(Mix.env() === :test, do: false, else: true),
   read_interval: 15_000,
+  relay_controller_timer: 10,
   relays_map: [
     {:circulation, 21, "out"},
     {:heating, 11, "out"},

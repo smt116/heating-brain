@@ -1,10 +1,11 @@
 import Config
 
 config :collector,
-  heating_controller_timer: 60_000,
+  heating_controller_timer: 120_000,
   read_initial_delay: 1_000,
   read_initial_enabled: true,
   read_interval: 60_000,
+  relay_controller_timer: 300_000,
   relays_map: [
     {:circulation, 21, "out"},
     {:heating, 11, "out"},
