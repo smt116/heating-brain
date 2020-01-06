@@ -23,3 +23,7 @@ config :collector,
   ]
 
 config :logger, :console, level: :info
+
+config :mnesia,
+  dir: 'mnesia',
+  tables_storage: :disc_only_copies

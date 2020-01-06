@@ -16,21 +16,12 @@
 
     # as app
     echo "export XDG_RUNTIME_DIR=/run/user/$(id -u)" >> ~/.bashrc
-
-    # symlink the service
-    ln -sf /opt/brain/server/systemd/user/brain.service ~/.config/systemd/user/brain.service
     ```
 
 ## Deployment
 
 ```bash
 ./server/deploy
-```
-
-Make sure to reload systemd daemon after updating service file:
-
-```bash
-ssh brain "/bin/systemctl --user daemon-reload"
 ```
 
 ## Resources

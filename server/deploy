@@ -20,5 +20,17 @@ function run() {
 label "Uploading files to the server"
 run rsync -rav --exclude .git --exclude _build --exclude tmp --exclude mnesia --prune-empty-dirs . brain:/opt/brain
 
-label "Compiling and restarting the application"
+label "Updating systemd service unit"
+run "ssh brain \"cp /opt/brain/server/systemd/user/brain.service ~/.config/systemd/user/brain.service\""
+
+label "Reloading systemd daemon"
+run "ssh brain \"systemctl --user daemon-reload\""
+
+label "Enabling systemd service unit"
+run "ssh brain \"systemctl --user enable brain\""
+
+label "Creating a new release"
+run "ssh brain \"/opt/brain/server/compile\""
+
+label "Restarting the application"
 run "ssh brain \"/bin/systemctl --user restart brain\""

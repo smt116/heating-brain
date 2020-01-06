@@ -7,12 +7,12 @@ Type=simple
 WorkingDirectory=/opt/brain
 Environment="MIX_ENV=prod"
 
-ExecStartPre=/usr/bin/mix release --overwrite
-ExecStart=/opt/brain/_build/prod/rel/brain/bin/brain start
-ExecStop=/opt/brain/_build/prod/rel/brain/bin/brain stop
+ExecStart=/usr/bin/sudo /opt/brain/_build/prod/rel/brain/bin/brain start
+ExecStop=/usr/bin/sudo /bin/kill -SIGTERM $MAINPID
 
 Restart=always
 RestartSec=5
+TimeoutStopSec=30s
 
 OOMScoreAdjust=500
 
@@ -21,4 +21,4 @@ StandardOutput=syslog
 SyslogIdentifier=brain
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
