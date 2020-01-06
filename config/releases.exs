@@ -23,7 +23,7 @@ config :collector,
     {:"28-0118761f69ff", :valve3, 3.5}
   ]
 
-config :logger, :console, level: :info
+config :logger, :console, level: :debug
 
 config :mnesia,
   dir: 'mnesia',
