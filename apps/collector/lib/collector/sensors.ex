@@ -4,6 +4,8 @@ defmodule Collector.Sensors do
   and reading historical data from the storage.
   """
 
+  require Logger
+
   alias Collector.Measurement
   alias Collector.Storage
 
@@ -70,7 +72,7 @@ defmodule Collector.Sensors do
     w1_sensors()
     |> Stream.map(&{&1, sensor_output_path(&1)})
     |> Stream.map(fn {id, path} -> {id, @handler.read!(path)} end)
-    |> Stream.map(fn {id, output} -> {id, extract_temperature(output)} end)
+    |> Stream.map(fn {id, output} -> {id, extract_temperature(id, output)} end)
     |> Stream.reject(fn {_, check} -> check === :error end)
     |> Stream.map(fn {id, {:ok, value}} -> {id, Integer.parse(value)} end)
     |> Enum.map(fn {id, {int, ""}} -> Measurement.new(id, int / 1000) end)
@@ -158,23 +160,31 @@ defmodule Collector.Sensors do
   #
   # where `YES` means that the reading is not malformed and `t=22000` means that
   # the current temperature is 22°C.
-  defp extract_temperature(output) when is_binary(output) do
+  defp extract_temperature(id, output) when is_binary(output) do
     [first, second] =
       output
       |> String.trim()
       |> String.split("\n")
 
     if String.ends_with?(first, "YES") do
-      raw_temperature =
-        ~r/t=(?<temperature>[-\d]+)/
-        |> Regex.named_captures(second)
-        |> Map.fetch!("temperature")
-
-      {:ok, raw_temperature}
+      ~r/t=(?<temperature>[-\d]+)/
+      |> Regex.named_captures(second)
+      |> Map.fetch!("temperature")
+      |> handle_raw_temperature(id)
     else
+      Logger.warn(fn -> "The #{id} sensor read failed: #{inspect(output)}" end)
+
       :error
     end
   end
+
+  defp handle_raw_temperature("85000", id) do
+    Logger.warn(fn -> "The #{id} sensor reported power-on reset value" end)
+
+    :error
+  end
+
+  defp handle_raw_temperature(raw_temperature, _id), do: {:ok, raw_temperature}
 
   # FIXME: duplicated in `Relays` module
   @spec newer({timestamp, value}, {timestamp, value}) :: {timestamp, value}

@@ -2,6 +2,7 @@ defmodule Collector.SensorsTest do
   use Collector.DataCase, async: false
 
   import Collector.Sensors, only: [current: 0, get: 0, get: 1, read_all: 0]
+  import ExUnit.CaptureLog
 
   alias Collector.Measurement
   alias Collector.Storage
@@ -74,7 +75,18 @@ defmodule Collector.SensorsTest do
       FilesystemMock.set_sensor(:foo, 23.187)
       FilesystemMock.set_sensor(:bar, 24.011, malformed: true)
 
-      assert [%Collector.Measurement{id: :foo, value: 23.187}] = read_all()
+      assert capture_log(fn ->
+               assert [%Collector.Measurement{id: :foo, value: 23.187}] = read_all()
+             end) =~ "The bar sensor read failed"
+    end
+
+    test "does not include readings with power-on reset value" do
+      FilesystemMock.set_sensor(:foo, 85.0)
+      FilesystemMock.set_sensor(:bar, 24.011)
+
+      assert capture_log(fn ->
+               assert [%Collector.Measurement{id: :bar, value: 24.011}] = read_all()
+             end) =~ "The foo sensor reported power-on reset value"
     end
   end
 
