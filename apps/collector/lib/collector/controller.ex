@@ -21,8 +21,6 @@ defmodule Collector.Controller do
 
   @opaque state :: [{label, {value, reference | nil}}]
 
-  @timer Application.get_env(:collector, :relay_controller_timer)
-
   @impl true
   @spec init(state) :: {:ok, state}
   def init(state) do
@@ -72,7 +70,7 @@ defmodule Collector.Controller do
   end
 
   @impl true
-  def terminate(reason, state) do
+  def terminate(reason, _state) do
     Logger.info(fn ->
       "Disabling all relays due to termination (#{inspect(reason)})"
     end)
@@ -104,7 +102,8 @@ defmodule Collector.Controller do
       end)
 
       cancel_timer(timer)
-      new_timer = Process.send_after(self(), {:put_relay_state, label}, @timer)
+      delay = get_env(:collector, :relay_controller_timer)
+      new_timer = Process.send_after(self(), {:put_relay_state, label}, delay)
 
       Keyword.update!(state, label, fn {value, _} -> {value, new_timer} end)
     end

@@ -8,6 +8,7 @@ defmodule Collector.HeatingController do
 
   require Logger
 
+  import Application, only: [get_env: 2]
   import Collector.Relays, only: [put_state: 1]
 
   alias Collector.Measurement
@@ -22,7 +23,6 @@ defmodule Collector.HeatingController do
 
   @heating_label :heating
   @initial_state [timer: nil, valves: []]
-  @timer Application.get_env(:collector, :heating_controller_timer)
 
   @impl true
   @spec init(state) :: {:ok, state}
@@ -102,7 +102,7 @@ defmodule Collector.HeatingController do
 
   def put_heating_state_delay(valves_states) do
     if any_valve_enabled?(valves_states) do
-      @timer
+      get_env(:collector, :heating_controller_timer)
     else
       0
     end
