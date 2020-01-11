@@ -86,10 +86,6 @@ defmodule Collector.RelaysTest do
 
       assert [
                %RelayState{
-                 label: :circulation,
-                 value: false
-               },
-               %RelayState{
                  label: :heating,
                  value: true
                },
