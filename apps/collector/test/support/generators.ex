@@ -13,11 +13,9 @@ defmodule Collector.Generators do
   def id, do: atom(:alphanumeric)
 
   def measurement do
-    value = map(float(min: 16.0, max: 32.0), &Float.round(&1, 3))
-
     gen all id <- id(),
             timestamp <- timestamp(),
-            value <- value do
+            value <- temp() do
       %Measurement{
         id: id,
         timestamp: timestamp,
@@ -39,6 +37,8 @@ defmodule Collector.Generators do
       }
     end
   end
+
+  def temp, do: map(float(min: -30.0, max: 60.0), &Float.round(&1, 3))
 
   defp timestamp do
     map(

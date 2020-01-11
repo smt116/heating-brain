@@ -9,8 +9,10 @@ defmodule Collector.Reader do
   require Logger
 
   import Application, only: [get_env: 2]
-  import Collector.Sensors, only: [read_all: 0]
+  import Collector.OneWireWorker, only: [read_all: 0]
   import Collector.Storage, only: [write: 1]
+
+  alias Collector.Measurement
 
   @opaque state :: []
 
@@ -32,12 +34,14 @@ defmodule Collector.Reader do
   @impl true
   @spec handle_info(:read_all, state) :: {:noreply, state}
   def handle_info(:read_all, state) do
-    read_all() |> Enum.each(&write/1)
-
+    read_all() |> Enum.each(&handle_read_all_result/1)
     get_env(:collector, :read_interval) |> schedule_next_read_after()
 
     {:noreply, state}
   end
+
+  defp handle_read_all_result({:ok, %Measurement{} = m}), do: write(m)
+  defp handle_read_all_result({:error, msg}), do: Logger.error(fn -> msg end)
 
   defp schedule_next_read_after(interval) do
     Process.send_after(self(), :read_all, interval)

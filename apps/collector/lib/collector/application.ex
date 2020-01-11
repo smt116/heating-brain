@@ -7,13 +7,14 @@ defmodule Collector.Application do
 
   @impl true
   def start(_type, _args) do
-    # The order of children is important.
     children =
       Enum.reject(
         [
           @handler_process
           | [
+              # The order is important.
               {Collector.Storage, []},
+              {Collector.OneWireWorker, []},
               {Collector.HeatingController, []},
               {Collector.Controller, []},
               {Collector.Reader, []}

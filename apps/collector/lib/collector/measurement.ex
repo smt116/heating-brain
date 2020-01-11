@@ -6,8 +6,8 @@ defmodule Collector.Measurement do
   @enforce_keys [:id, :value, :timestamp]
   defstruct [:id, :value, :timestamp]
 
-  @opaque raw_id :: String.t()
   @opaque id :: atom
+  @type raw_id :: String.t()
   @type value :: float
 
   @type t ::

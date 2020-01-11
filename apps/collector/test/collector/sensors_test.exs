@@ -1,8 +1,7 @@
 defmodule Collector.SensorsTest do
   use Collector.DataCase, async: false
 
-  import Collector.Sensors, only: [current: 0, get: 0, get: 1, read_all: 0]
-  import ExUnit.CaptureLog
+  import Collector.Sensors, only: [current: 0, get: 0, get: 1]
 
   alias Collector.Measurement
   alias Collector.Storage
@@ -41,52 +40,8 @@ defmodule Collector.SensorsTest do
             }
           end)
 
-        assert Enum.sort(current()) === Enum.sort(expected_response)
+        assert current() === Enum.sort(expected_response)
       end
-    end
-  end
-
-  describe "read_all/0" do
-    test "reads measurements from the filesystem" do
-      FilesystemMock.set_sensor(:foo, 23.187)
-      FilesystemMock.set_sensor(:bar, 24.011)
-      FilesystemMock.set_sensor(:baz, -0.125)
-
-      assert [
-               %Collector.Measurement{
-                 id: :baz,
-                 timestamp: _,
-                 value: -0.125
-               },
-               %Collector.Measurement{
-                 id: :bar,
-                 timestamp: _,
-                 value: 24.011
-               },
-               %Collector.Measurement{
-                 id: :foo,
-                 timestamp: _,
-                 value: 23.187
-               }
-             ] = read_all()
-    end
-
-    test "does not include malformed readings" do
-      FilesystemMock.set_sensor(:foo, 23.187)
-      FilesystemMock.set_sensor(:bar, 24.011, malformed: true)
-
-      assert capture_log(fn ->
-               assert [%Collector.Measurement{id: :foo, value: 23.187}] = read_all()
-             end) =~ "The bar sensor read failed"
-    end
-
-    test "does not include readings with power-on reset value" do
-      FilesystemMock.set_sensor(:foo, 85.0)
-      FilesystemMock.set_sensor(:bar, 24.011)
-
-      assert capture_log(fn ->
-               assert [%Collector.Measurement{id: :bar, value: 24.011}] = read_all()
-             end) =~ "The foo sensor reported power-on reset value"
     end
   end
 
@@ -99,7 +54,7 @@ defmodule Collector.SensorsTest do
         expected_response =
           measurements
           |> Enum.group_by(& &1.id)
-          |> Enum.map(fn {id, values} ->
+          |> Stream.map(fn {id, values} ->
             {
               id,
               values
@@ -108,8 +63,9 @@ defmodule Collector.SensorsTest do
               |> Enum.sort_by(&elem(&1, 0))
             }
           end)
+          |> Enum.sort_by(&elem(&1, 0))
 
-        assert Enum.sort(get()) === Enum.sort(expected_response)
+        assert get() === expected_response
       end
     end
   end
