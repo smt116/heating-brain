@@ -2,5 +2,8 @@
 
 set -e
 
+export MIX_ENV=prod
+
 cd /opt/brain
-MIX_ENV=prod /usr/bin/mix release --overwrite
+/usr/bin/mix deps.get --only prod
+/usr/bin/mix release --overwrite

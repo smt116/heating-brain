@@ -51,7 +51,8 @@ defmodule Brain.MixProject do
         applications: [
           collector: :permanent,
           mnesia: :load,
-          runtime_tools: :permanent
+          runtime_tools: :permanent,
+          interface: :permanent
         ]
       ]
     ]
