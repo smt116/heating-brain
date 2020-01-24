@@ -3,6 +3,7 @@ defmodule Collector do
   The interface for interacting with sensors and relays.
   """
 
+  alias Collector.OneWire
   alias Collector.OneWireWorker
   alias Collector.Relays
   alias Collector.Sensors
@@ -12,6 +13,8 @@ defmodule Collector do
   defdelegate relays_states, to: Relays, as: :current
 
   defdelegate fs_read_sensors, to: OneWireWorker, as: :read_all
+  defdelegate sensor_label(id), to: OneWire, as: :label
+
   defdelegate get_sensor(f), to: Sensors, as: :get
   defdelegate get_sensor, to: Sensors, as: :get
   defdelegate latest_sensors_readings(within), to: Sensors, as: :latest

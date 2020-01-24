@@ -14,6 +14,14 @@ defmodule Collector.OneWire do
   @w1_bus_master1_path Application.get_env(:collector, :w1_bus_master1_path)
 
   @doc """
+  Translates the sensor identifier into the human-readable label (if available).
+  """
+  @spec label(Measurement.id()) :: atom()
+  def label(id) when is_atom(id) do
+    Application.get_env(:collector, :sensors_label_map) |> Keyword.get(id, id)
+  end
+
+  @doc """
   Returns a list of all available sensors. It uses the special file from the 1-wire
   master bus directory called `w1_master_slaves`. This file contains all ids.
 

@@ -19,6 +19,11 @@ config :collector,
     {:valve5, 19, "out"},
     {:valve6, 26, "out"}
   ],
+  sensors_label_map: [
+    "28-0118761f69ff": :pipe,
+    "28-01187654b6ff": :case,
+    "28-01187615e4ff": :living_room
+  ],
   sensors_map: [
     {:"28-01187615e4ff", :valve1, 25.0},
     {:"28-01187654b6ff", :valve2, 23.5},
