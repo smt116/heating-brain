@@ -7,7 +7,7 @@ config :collector,
   heating_controller_timer: 5_000,
   read_initial_delay: 1_000,
   read_initial_enabled: true,
-  read_interval: 15_000,
+  read_interval: 10_000,
   relay_controller_timer: 2_000,
   relays_map: [
     {:heating, 21, "out"},

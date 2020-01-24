@@ -36,11 +36,13 @@ defmodule Interface.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.4.11"},
-      {:phoenix_pubsub, "~> 1.1"},
+      {:collector, in_umbrella: true},
+      {:jason, "~> 1.0"},
+      {:phoenix, "~> 1.4"},
       {:phoenix_html, "~> 2.11"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:jason, "~> 1.0"},
+      {:phoenix_live_view, "~> 0.6"},
+      {:phoenix_pubsub, "~> 1.1"},
       {:plug_cowboy, "~> 2.0"}
     ]
   end

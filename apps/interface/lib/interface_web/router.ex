@@ -5,6 +5,7 @@ defmodule InterfaceWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_flash
+    plug Phoenix.LiveView.Flash
     plug :protect_from_forgery
     plug :put_secure_browser_headers
   end
@@ -16,6 +17,6 @@ defmodule InterfaceWeb.Router do
   scope "/", InterfaceWeb do
     pipe_through :browser
 
-    get "/", PageController, :index
+    live "/", DashboardLive
   end
 end

@@ -12,6 +12,7 @@ use Mix.Config
 config :interface, InterfaceWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
   http: [:inet6, port: 80],
+  live_view: [signing_salt: "PNPrVtXA/np3s/HgsrqSK+MHWhT2ldfk7KxeVz13yaaX2WRpq6MF0e/JU47AiP9h"],
   secret_key_base: "GRPMEDPm+cAqEgriwl2Ucz1LQrepxSB3igJuVsLY9ovVjNIAl",
   url: [host: "brain.local", port: 80]
 

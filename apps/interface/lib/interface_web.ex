@@ -20,6 +20,7 @@ defmodule InterfaceWeb do
       use Phoenix.Controller, namespace: InterfaceWeb
 
       import Plug.Conn
+      import Phoenix.LiveView.Controller
       alias InterfaceWeb.Router.Helpers, as: Routes
     end
   end
@@ -30,8 +31,8 @@ defmodule InterfaceWeb do
         root: "lib/interface_web/templates",
         namespace: InterfaceWeb
 
-      # Import convenience functions from controllers
       import Phoenix.Controller, only: [get_flash: 1, get_flash: 2, view_module: 1]
+      import Phoenix.LiveView.Helpers
 
       # Use all HTML functionality (forms, tags, etc)
       use Phoenix.HTML
@@ -45,6 +46,7 @@ defmodule InterfaceWeb do
       use Phoenix.Router
       import Plug.Conn
       import Phoenix.Controller
+      import Phoenix.LiveView.Router
     end
   end
 

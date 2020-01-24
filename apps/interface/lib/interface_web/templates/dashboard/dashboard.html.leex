@@ -1,0 +1,12 @@
+<h3>Sensors</h3>
+<li>
+  <%= for {id, sensor} <- @sensors do %>
+    <li><%= id %>: <%= sensor.value %>°C</li>
+  <% end %>
+</li>
+<h3>Relays</h3>
+<li>
+  <%= for {label, relay} <- @relays do %>
+    <li><%= label %>: <%= relay.value %>°C</li>
+  <% end %>
+</li>
