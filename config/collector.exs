@@ -28,6 +28,6 @@ config :collector,
 
 config :mnesia,
   dir: 'mnesia/#{Mix.env()}-#{node()}',
-  tables_storage: :disc_only_copies
+  tables_storage: :disc_copies
 
 import_config "collector/#{Mix.env()}.exs"

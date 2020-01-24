@@ -24,4 +24,4 @@ config :collector,
 
 config :mnesia,
   dir: 'mnesia',
-  tables_storage: :disc_only_copies
+  tables_storage: :disc_copies
