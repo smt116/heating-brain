@@ -39,7 +39,7 @@ defmodule Collector.Controller do
 
     new_state =
       if is_nil(item) do
-        Logger.info(fn -> "There is no mapping for #{id} sensor" end)
+        Logger.debug(fn -> "There is no mapping for #{id} sensor" end)
 
         state
       else
