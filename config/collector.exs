@@ -29,6 +29,7 @@ config :collector,
     {:"28-01187654b6ff", :valve2, 23.5},
     {:"28-0118761f69ff", :valve3, 3.5}
   ],
+  w1_bus_delay_between_readings: 1_000,
   w1_bus_master1_path: "/sys/bus/w1/devices/w1_bus_master1"
 
 config :mnesia,

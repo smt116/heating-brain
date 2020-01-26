@@ -17,6 +17,7 @@ config :collector,
   sensors_map: [
     {:"28-01187615e4ff", :valve1, 21.0},
     {:"28-0118761f69ff", :valve2, 23.5}
-  ]
+  ],
+  w1_bus_delay_between_readings: 0
 
 config :mnesia, tables_storage: :ram_copies

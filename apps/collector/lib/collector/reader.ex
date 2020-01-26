@@ -9,12 +9,14 @@ defmodule Collector.Reader do
   require Logger
 
   import Application, only: [get_env: 2]
-  import Collector.OneWireWorker, only: [read_all: 0]
+  import Collector.OneWire, only: [sensors: 0]
+  import Collector.OneWireWorker, only: [read: 1]
   import Collector.Storage, only: [write: 1]
 
   alias Collector.Measurement
 
   @opaque state :: []
+  @typep raw_id :: Measurement.raw_id()
 
   @impl true
   @spec init(state) :: {:ok, state}
@@ -32,16 +34,24 @@ defmodule Collector.Reader do
   end
 
   @impl true
+  @spec handle_cast({:read, raw_id}, state) :: {:noreply, state}
+  def handle_cast({:read, id}, state) do
+    id |> read() |> handle_read_result()
+
+    {:noreply, state}
+  end
+
+  @impl true
   @spec handle_info(:read_all, state) :: {:noreply, state}
   def handle_info(:read_all, state) do
-    read_all() |> Enum.each(&handle_read_all_result/1)
+    sensors() |> Enum.each(&GenServer.cast(__MODULE__, {:read, &1}))
     get_env(:collector, :read_interval) |> schedule_next_read_after()
 
     {:noreply, state}
   end
 
-  defp handle_read_all_result({:ok, %Measurement{} = m}), do: write(m)
-  defp handle_read_all_result({:error, msg}), do: Logger.error(fn -> msg end)
+  defp handle_read_result({:ok, %Measurement{} = m}), do: write(m)
+  defp handle_read_result({:error, msg}), do: Logger.error(fn -> msg end)
 
   defp schedule_next_read_after(interval) do
     Process.send_after(self(), :read_all, interval)
