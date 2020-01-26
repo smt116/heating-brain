@@ -5,10 +5,6 @@ defmodule Collector.OneWireTest do
 
   alias Collector.Measurement
 
-  setup do
-    FilesystemMock.clear()
-  end
-
   describe "sensors/0" do
     property "returns a list of available sensors" do
       check all tuples <- list_of(tuple({Generators.id(), Generators.temp()})) do
@@ -25,7 +21,7 @@ defmodule Collector.OneWireTest do
 
         assert sensors() === expected_ids
 
-        FilesystemMock.clear()
+        FilesystemMock.reset()
       end
     end
   end

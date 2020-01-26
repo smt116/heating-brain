@@ -1,6 +1,6 @@
 defmodule Collector.Controller do
   @moduledoc """
-  The process that listens to readings from sensors and controls relays.
+  The process that listens to the storage's events and controls relays.
   """
 
   use GenServer
@@ -46,7 +46,7 @@ defmodule Collector.Controller do
         {_, label, expected_value} = item
 
         state
-        |> Keyword.put_new(label, {false, nil})
+        |> Keyword.put_new(label, {nil, nil})
         |> Keyword.get_and_update(label, fn {_value, timer} = current ->
           {current, {measurement.value < expected_value, timer}}
         end)

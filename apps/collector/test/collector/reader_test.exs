@@ -1,14 +1,13 @@
 defmodule Collector.ReaderTest do
   use Collector.DataCase, async: false
 
-  import Collector.Sensors, only: [get: 0]
+  import Collector.Sensors, only: [select: 1]
   import ExUnit.CaptureLog
 
   alias Collector.Reader
   alias Collector.Storage
 
   setup do
-    FilesystemMock.clear()
     Storage.subscribe()
   end
 
@@ -21,10 +20,8 @@ defmodule Collector.ReaderTest do
 
       Enum.each(1..2, fn _ -> assert_receive({:new_record, _}) end)
 
-      assert [
-               bar: [{_, 24.011}],
-               foo: [{_, 23.187}]
-             ] = get()
+      assert [{_, 23.187}] = select(:foo)
+      assert [{_, 24.011}] = select(:bar)
     end
 
     test "logs malformed readings" do
@@ -35,7 +32,8 @@ defmodule Collector.ReaderTest do
                Process.whereis(Reader) |> Process.send(:read_all, [])
                assert_receive({:new_record, _})
 
-               assert [foo: [{_, 23.187}]] = get()
+               assert [{_, 23.187}] = select(:foo)
+               assert [] = select(:bar)
              end) =~ "bar read failed"
     end
 
@@ -47,7 +45,8 @@ defmodule Collector.ReaderTest do
                Process.whereis(Reader) |> Process.send(:read_all, [])
                assert_receive({:new_record, _})
 
-               assert [foo: [{_, 23.187}]] = get()
+               assert [{_, 23.187}] = select(:foo)
+               assert [] = select(:bar)
              end) =~ "bar reported power-on reset value"
     end
   end

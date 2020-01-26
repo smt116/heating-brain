@@ -1,6 +1,8 @@
 defmodule Collector.Storage do
   @moduledoc """
-  The interface for interacting with database. It uses Mnesia under-the-hood.
+  The internal interface for interacting with database. It shouldn't be used
+  directly except subscribing to the database events. The storage uses Mnesia
+  under-the-hood.
   """
 
   use GenServer
@@ -16,6 +18,7 @@ defmodule Collector.Storage do
 
   @type record :: measurement | relay_state
   @type table :: Measurement | RelayState
+  @type timestamp :: DateTime.t()
 
   @typep caller :: {pid, term}
   @typep unix_timestamp :: pos_integer
@@ -48,7 +51,7 @@ defmodule Collector.Storage do
   @impl true
   @spec init(state) :: {:ok, state}
   def init(subscribers) do
-    Logger.debug(fn -> "Initializing Mnesia database" end)
+    Logger.info(fn -> "Initializing Mnesia database" end)
     :ok = File.mkdir_p("mnesia")
 
     Mnesia.create_schema([node()])
@@ -59,7 +62,7 @@ defmodule Collector.Storage do
     :ok = Mnesia.wait_for_tables([Measurement, RelayState], 5000)
 
     Enum.each([Measurement, RelayState], fn table ->
-      Logger.debug(fn -> "Subscribing to #{table} table events" end)
+      Logger.info(fn -> "Subscribing to #{table} table events" end)
       Mnesia.subscribe({:table, table, :simple})
     end)
 
@@ -132,8 +135,11 @@ defmodule Collector.Storage do
       {:write, {RelayState, _, _} = relay_state, _} ->
         relay_state |> to_struct() |> publish()
 
+      {:delete, record, _} ->
+        Logger.debug(fn -> "Record has been deleted: #{inspect(record)}" end)
+
       {type, record, _} ->
-        Logger.debug(fn -> "Unhandled Mnesia #{type}: #{inspect(record)}" end)
+        Logger.warn(fn -> "Unhandled Mnesia #{type}: #{inspect(record)}" end)
     end
 
     {:noreply, subscribers}
@@ -144,36 +150,53 @@ defmodule Collector.Storage do
     GenServer.start_link(__MODULE__, state, name: __MODULE__)
   end
 
-  @doc """
-  Reads records from the database. It requires a function that will be used to
-  fold data.
+  @spec select(atom, atom, timestamp) :: list({timestamp, term})
+  def select(table, id, %DateTime{} = dt) when is_atom(table) and is_atom(id) do
+    fn ->
+      unix = DateTime.to_unix(dt)
 
-  ## Examples
-
-      iex> fn %{id: id, value: value, timestamp: timestamp}, acc ->
-      ...>   acc
-      ...>   |> Keyword.put_new(id, [])
-      ...>   |> Keyword.get_and_update(id, & {&1, [{timestamp, value} | &1]})
-      ...>   |> elem(1)
-      ...> end
-      ...> |> Collector.Storage.read(Measurement)
-      [
-        "28-0118761f69ff": [
-          {~U[2019-10-28 07:46:56Z], 21.875},
-          {~U[2019-10-28 07:47:13Z], 21.875}
-        ],
-        "28-01187615e4ff": [
-          {~U[2019-10-28 07:46:55Z], 23.687},
-          {~U[2019-10-28 07:47:12Z], 23.437}
+      Mnesia.select(
+        table,
+        [
+          {
+            {table, {:"$1", :"$2"}, :"$3"},
+            [
+              {:==, :"$1", id},
+              {:>, :"$2", unix}
+            ],
+            [
+              [:"$2", :"$3"]
+            ]
+          }
         ]
-      ]
-
-  """
-  @spec read((record, list(r) -> list(r)), table) :: list(r) when r: any
-  def read(f, table_name) do
-    fn -> Mnesia.foldl(&(to_struct(&1) |> f.(&2)), [], table_name) end
+      )
+    end
     |> Mnesia.transaction()
-    |> handle_result()
+    |> handle_select(table, id)
+  end
+
+  @spec select_all(atom, timestamp) :: list({atom, list({timestamp, term})})
+  def select_all(table, %DateTime{} = dt) when is_atom(table) do
+    fn ->
+      unix = DateTime.to_unix(dt)
+
+      Mnesia.select(
+        table,
+        [
+          {
+            {table, {:"$1", :"$2"}, :"$3"},
+            [
+              {:>, :"$2", unix}
+            ],
+            [
+              [:"$$"]
+            ]
+          }
+        ]
+      )
+    end
+    |> Mnesia.transaction()
+    |> handle_select(table)
   end
 
   @doc """
@@ -204,7 +227,7 @@ defmodule Collector.Storage do
       |> Mnesia.write()
     end
     |> Mnesia.transaction()
-    |> handle_result(struct)
+    |> handle_write_result(struct)
   end
 
   defp from_struct(%Measurement{id: id, value: value, timestamp: timestamp}) do
@@ -215,17 +238,40 @@ defmodule Collector.Storage do
     {RelayState, {l, DateTime.to_unix(timestamp)}, value}
   end
 
-  defp handle_result({:atomic, result}), do: result
+  defp handle_select({:atomic, r}, _table) when is_list(r) do
+    r
+    |> Enum.group_by(fn [[id, _unix, _value]] -> id end, fn [[_id, unix, value]] ->
+      {DateTime.from_unix!(unix), value}
+    end)
+    |> Stream.map(fn {id, readings} -> {id, Enum.sort(readings)} end)
+    |> Enum.sort()
+  end
 
-  defp handle_result({:aborted, reason}) do
-    Logger.error(fn -> "Reading failed: #{inspect(reason)}" end)
+  defp handle_select({:aborted, reason}, table) do
+    Logger.error(fn ->
+      "Selecting from #{table} failed: #{inspect(reason)}"
+    end)
 
     {:error, reason}
   end
 
-  defp handle_result({:atomic, :ok}, _struct), do: :ok
+  defp handle_select({:atomic, r}, _table, _id) when is_list(r) do
+    r
+    |> Enum.sort_by(fn [unix, _value] -> unix end)
+    |> Enum.map(fn [unix, value] -> {DateTime.from_unix!(unix), value} end)
+  end
 
-  defp handle_result({:aborted, reason}, struct) do
+  defp handle_select({:aborted, reason}, table, id) do
+    Logger.error(fn ->
+      "Selecting from #{table} failed for #{id}: #{inspect(reason)}"
+    end)
+
+    {:error, reason}
+  end
+
+  defp handle_write_result({:atomic, :ok}, _struct), do: :ok
+
+  defp handle_write_result({:aborted, reason}, struct) do
     Logger.error(fn -> "Writing #{struct} failed: #{reason}" end)
 
     {:error, reason}

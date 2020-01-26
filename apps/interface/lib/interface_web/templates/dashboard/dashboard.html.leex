@@ -1,12 +1,12 @@
 <h3>Sensors</h3>
 <li>
-  <%= for {id, sensor} <- @sensors do %>
-    <li><%= sensor_label(id) %>: <%= sensor.value %>°C</li>
+  <%= for {id, {timestamp, value}} <- Enum.sort(@sensors) do %>
+    <li><%= sensor_label(id) %>: <%= value %>°C at <%= timestamp %></li>
   <% end %>
 </li>
 <h3>Relays</h3>
 <li>
-  <%= for {label, relay} <- @relays do %>
-    <li><%= label %>: <%= relay.value %>°C</li>
+  <%= for {label, {timestamp, value}} <- Enum.sort(@relays) do %>
+    <li><%= label %>: <%= value %> at <%= timestamp %></li>
   <% end %>
 </li>

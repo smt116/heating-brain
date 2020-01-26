@@ -5,10 +5,6 @@ defmodule Collector.OneWireWorkerTest do
 
   alias Collector.Measurement
 
-  setup do
-    FilesystemMock.clear()
-  end
-
   describe "read_all/0" do
     test "returns a list of measurements from the filesystem" do
       FilesystemMock.set_sensor(:foo, -32.125)

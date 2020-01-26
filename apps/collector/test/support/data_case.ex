@@ -13,14 +13,9 @@ defmodule Collector.DataCase do
     end
   end
 
-  setup_all do
-    :ok = Collector.FilesystemMock.clear()
-
-    :ok
-  end
-
   setup do
     Collector.DatabaseHelper.clear_tables()
+    :ok = Collector.FilesystemMock.reset()
 
     :ok
   end

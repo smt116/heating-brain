@@ -1,59 +1,31 @@
 defmodule Collector.RelaysTest do
   use Collector.DataCase, async: false
 
-  import Collector.Relays, only: [current: 0, put_state: 1, read_all: 0]
+  import Collector.RelayState, only: [new: 2]
+
+  import Collector.Relays,
+    only: [
+      put_state: 1,
+      read_all: 0,
+      select: 1,
+      select: 2,
+      select_all: 0,
+      select_all: 1
+    ]
+
   import Collector.Storage, only: [write: 1]
 
-  alias Collector.Relays
   alias Collector.RelayState
+  alias Collector.Relays
   alias Collector.Storage
 
   @relays_map Application.get_env(:collector, :relays_map)
-
-  setup do
-    FilesystemMock.reset()
-
-    :ok
-  end
-
-  describe "current/0" do
-    property "fetches latest states for each relay from the database" do
-      :ok = Storage.subscribe()
-
-      check all relay_states <- list_of(Generators.relay_state()) do
-        DatabaseHelper.clear_tables()
-
-        Enum.each(relay_states, fn state ->
-          :ok = write(state)
-
-          # Make sure that the storage had processed the message.
-          assert_receive({:new_record, %RelayState{}})
-        end)
-
-        expected_response =
-          relay_states
-          |> Enum.group_by(& &1.label)
-          |> Enum.map(fn {label, values} ->
-            {
-              label,
-              values
-              |> Stream.map(&{&1.timestamp, &1.value})
-              |> Enum.max_by(&elem(&1, 0))
-            }
-          end)
-
-        assert Enum.sort(current()) === Enum.sort(expected_response)
-      end
-
-      :ok = self() |> Storage.unsubscribe()
-    end
-  end
 
   describe "put_state/1" do
     test "writes the new state to the filesystem" do
       assert read_all() |> Enum.find(&(&1.label === :valve1 && &1.value === false))
 
-      RelayState.new(:valve1, true) |> put_state()
+      new(:valve1, true) |> put_state()
 
       assert read_all() |> Enum.find(&(&1.label === :valve1 && &1.value === true))
     end
@@ -61,7 +33,7 @@ defmodule Collector.RelaysTest do
     test "writes the new state to the storage" do
       Storage.subscribe()
 
-      RelayState.new(:valve1, true) |> put_state()
+      new(:valve1, true) |> put_state()
 
       assert_receive({:new_record, %RelayState{label: :valve1, value: true}})
 
@@ -69,11 +41,11 @@ defmodule Collector.RelaysTest do
     end
 
     test "does not change the state if it is already set" do
-      RelayState.new(:valve1, true) |> put_state()
+      new(:valve1, true) |> put_state()
 
       assert read_all() |> Enum.find(&(&1.label === :valve1 && &1.value === true))
 
-      RelayState.new(:valve1, true) |> put_state()
+      new(:valve1, true) |> put_state()
 
       assert read_all() |> Enum.find(&(&1.label === :valve1 && &1.value === true))
     end
@@ -100,24 +72,79 @@ defmodule Collector.RelaysTest do
                %RelayState{
                  label: :valve2,
                  value: false
-               },
-               %RelayState{
-                 label: :valve3,
-                 value: false
-               },
-               %RelayState{
-                 label: :valve4,
-                 value: false
-               },
-               %RelayState{
-                 label: :valve5,
-                 value: false
-               },
-               %RelayState{
-                 label: :valve6,
-                 value: false
                }
              ] = read_all()
+    end
+  end
+
+  describe "select/1" do
+    test "fetches states for a given relay" do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      before = DateTime.add(now, -5, :second)
+      obsolete = DateTime.add(now, -301, :second)
+
+      new(:valve1, false) |> Map.put(:timestamp, now) |> write()
+      new(:valve1, true) |> Map.put(:timestamp, before) |> write()
+      new(:valve1, false) |> Map.put(:timestamp, obsolete) |> write()
+
+      assert [
+               {^before, true},
+               {^now, false}
+             ] = select(:valve1)
+    end
+  end
+
+  describe "select/2" do
+    test "fetches states within time boundary for a given relay" do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      before = DateTime.add(now, -5, :second)
+
+      new(:valve2, false) |> Map.put(:timestamp, now) |> write()
+      new(:valve2, true) |> Map.put(:timestamp, before) |> write()
+
+      assert [{^now, false}] = select(:valve2, 5)
+
+      assert [
+               {^before, true},
+               {^now, false}
+             ] = select(:valve2, 6)
+    end
+  end
+
+  describe "select_all/0" do
+    test "fetches states for all relays" do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      before = DateTime.add(now, -5, :second)
+      obsolete = DateTime.add(now, -301, :second)
+
+      new(:valve1, false) |> Map.put(:timestamp, now) |> write()
+      new(:heating, true) |> Map.put(:timestamp, before) |> write()
+      new(:heating, false) |> Map.put(:timestamp, obsolete) |> write()
+
+      assert [
+               heating: [{^before, true}],
+               valve1: [{^now, false}]
+             ] = select_all()
+    end
+  end
+
+  describe "select_all/1" do
+    test "fetches states within time boundary for all relays" do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      before = DateTime.add(now, -5, :second)
+      obsolete = DateTime.add(now, -301, :second)
+
+      new(:valve1, false) |> Map.put(:timestamp, now) |> write()
+      new(:heating, true) |> Map.put(:timestamp, before) |> write()
+      new(:heating, false) |> Map.put(:timestamp, obsolete) |> write()
+
+      assert [
+               heating: [
+                 {^obsolete, false},
+                 {^before, true}
+               ],
+               valve1: [{^now, false}]
+             ] = select_all(310)
     end
   end
 

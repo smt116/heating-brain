@@ -1,86 +1,88 @@
 defmodule Collector.SensorsTest do
   use Collector.DataCase, async: false
 
-  import Collector.Sensors, only: [current: 0, get: 0, get: 1]
+  import Collector.Measurement, only: [new: 2]
 
-  alias Collector.Measurement
-  alias Collector.Storage
+  import Collector.Sensors,
+    only: [
+      select: 1,
+      select: 2,
+      select_all: 0,
+      select_all: 1
+    ]
 
-  setup do
-    FilesystemMock.clear()
-    :ok = Storage.subscribe()
+  import Collector.Storage, only: [write: 1]
 
-    :ok
-  end
+  describe "select/1" do
+    test "fetches readings for a given sensor" do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      before = DateTime.add(now, -5, :second)
+      obsolete = DateTime.add(now, -301, :second)
 
-  def write(%Measurement{} = measurement) do
-    :ok = Storage.write(measurement)
+      new("28-01187615e4ff", 22.5) |> Map.put(:timestamp, now) |> write()
+      new("28-01187615e4ff", 21.5) |> Map.put(:timestamp, before) |> write()
+      new("28-01187615e4ff", 23.125) |> Map.put(:timestamp, obsolete) |> write()
 
-    # Make sure that the storage had processed the message.
-    assert_receive({:new_record, %Measurement{}})
-
-    :ok
-  end
-
-  describe "current/0" do
-    property "fetches latest values for each measurement from database" do
-      check all measurements <- list_of(Generators.measurement()) do
-        DatabaseHelper.clear_tables()
-        Enum.each(measurements, &write/1)
-
-        expected_response =
-          measurements
-          |> Enum.group_by(& &1.id)
-          |> Enum.map(fn {id, values} ->
-            {
-              id,
-              values
-              |> Stream.map(&{&1.timestamp, &1.value})
-              |> Enum.max_by(&elem(&1, 0))
-            }
-          end)
-
-        assert current() === Enum.sort(expected_response)
-      end
+      assert [
+               {^before, 21.5},
+               {^now, 22.5}
+             ] = select(:"28-01187615e4ff")
     end
   end
 
-  describe "get/0" do
-    property "fetches all measurements from the database" do
-      check all measurements <- list_of(Generators.measurement()) do
-        DatabaseHelper.clear_tables()
-        Enum.each(measurements, &write/1)
+  describe "select/2" do
+    test "fetches radings within time boundary for a given sensor" do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      before = DateTime.add(now, -5, :second)
 
-        expected_response =
-          measurements
-          |> Enum.group_by(& &1.id)
-          |> Stream.map(fn {id, values} ->
-            {
-              id,
-              values
-              |> Stream.uniq_by(&{id, &1.timestamp})
-              |> Stream.map(&{&1.timestamp, &1.value})
-              |> Enum.sort_by(&elem(&1, 0))
-            }
-          end)
-          |> Enum.sort_by(&elem(&1, 0))
+      new("28-01187615e4ff", 22.5) |> Map.put(:timestamp, now) |> write()
+      new("28-01187615e4ff", 21.5) |> Map.put(:timestamp, before) |> write()
 
-        assert get() === expected_response
-      end
+      assert [{^now, 22.5}] = select(:"28-01187615e4ff", 5)
+
+      assert [
+               {^before, 21.5},
+               {^now, 22.5}
+             ] = select(:"28-01187615e4ff", 6)
     end
   end
 
-  describe "get/1" do
-    test "allows fetching a subset of measurements" do
-      [
-        %{id: id1},
-        %{id: id2, value: value}
-      ] = measurements = Enum.take(Generators.measurement(), 2)
+  describe "select_all/0" do
+    test "fetches readings for all sensors" do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      before = DateTime.add(now, -5, :second)
+      obsolete = DateTime.add(now, -301, :second)
 
-      Enum.each(measurements, &write/1)
+      new("28-01187615e4ff", 22.5) |> Map.put(:timestamp, now) |> write()
+      new("28-0118761f69ff", 21.5) |> Map.put(:timestamp, before) |> write()
+      new("28-0118761f69ff", 23.125) |> Map.put(:timestamp, obsolete) |> write()
 
-      assert [{^id1, _}] = get(&(&1.id == id1))
-      assert get(&(&1.value == value)) |> Enum.any?(fn {id, _} -> id === id2 end)
+      assert [
+               "28-01187615e4ff": [{^now, 22.5}],
+               "28-0118761f69ff": [{^before, 21.5}]
+             ] = select_all()
+    end
+  end
+
+  describe "select_all/1" do
+    test "fetches readings within time boundary for all sensors" do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      before = DateTime.add(now, -5, :second)
+      obsolete = DateTime.add(now, -301, :second)
+
+      new("28-01187615e4ff", 22.5) |> Map.put(:timestamp, now) |> write()
+      new("28-0118761f69ff", 21.5) |> Map.put(:timestamp, before) |> write()
+      new("28-0118761f69ff", 23.125) |> Map.put(:timestamp, obsolete) |> write()
+
+      assert [
+               "28-01187615e4ff": [{^now, 22.5}],
+               "28-0118761f69ff": [{^before, 21.5}]
+             ] = select_all()
+
+      assert [
+               "28-01187615e4ff": [{^now, 22.5}],
+               "28-0118761f69ff": [{^obsolete, 23.125}, {^before, 21.5}]
+             ] = select_all(310)
     end
   end
 end

@@ -1,7 +1,7 @@
 defmodule Collector.Relays do
   @moduledoc """
-  The interface for relays. It allows checking current values (via the filesystem)
-  and reading historical data from the storage.
+  The interface for relays. It allows reading all current values via the filesystem
+  and also accessing historical data from the storage.
   """
 
   require Logger
@@ -11,43 +11,10 @@ defmodule Collector.Relays do
   alias Collector.RelayState
   alias Collector.Storage
 
-  @handler Application.get_env(:collector, :filesystem_handler)
-
-  @type label :: RelayState.label()
+  @type id :: RelayState.label()
+  @type simplified_states :: list({timestamp, value})
   @type timestamp :: DateTime.t()
   @type value :: RelayState.value()
-
-  @doc """
-  Reads latest, known values from the database with the timestamp of last check.
-
-  ## Examples
-
-      iex> Collector.Relays.current()
-      [
-        heating: {~U[2019-12-01 09:52:14Z], true},
-        valve1: {~U[2019-12-01 09:52:14Z], true},
-        valve2: {~U[2019-12-01 09:52:14Z], true},
-        valve3: {~U[2019-12-01 09:52:14Z], false},
-      ]
-
-  """
-  @spec current :: [{label, value, {timestamp, timestamp}}]
-  def current do
-    # In fact, it should be :mnesia.last with ordered_set table but this kind of
-    # semantic is not supported for disc_only_copies.
-    #
-    # FIXME: use disc_copies semantic
-    #        http://erlang.org/doc/man/mnesia.html#description
-    fn %{label: label, value: value, timestamp: timestamp}, acc ->
-      acc
-      |> Keyword.put_new(label, nil)
-      |> Keyword.get_and_update(label, &{&1, newer(&1, {timestamp, value})})
-      |> elem(1)
-      |> Enum.reject(fn {_label, value} -> is_nil(value) end)
-    end
-    |> Storage.read(RelayState)
-    |> Enum.sort()
-  end
 
   @doc """
   Change the state of relay according to the given struct.
@@ -61,7 +28,7 @@ defmodule Collector.Relays do
 
       label
       |> relay_raw_value_path()
-      |> @handler.write!(raw_value)
+      |> Application.get_env(:collector, :filesystem_handler).write!(raw_value)
 
       :ok = RelayState.new(label, value) |> Storage.write()
     end
@@ -93,7 +60,6 @@ defmodule Collector.Relays do
           value: true
         }
       ]
-
   """
   @spec read_all :: list(RelayState.t())
   def read_all do
@@ -102,16 +68,93 @@ defmodule Collector.Relays do
     |> Enum.map(fn {label, state} -> RelayState.new(label, state) end)
   end
 
+  @doc """
+  Returns states for a given relay. The results are limitated to those that were
+  read within last N seconds (default: 5 minutes).
+
+  ## Examples
+
+      iex> Collector.Relays.select(:valve6, 60)
+      [
+        {~U[2020-01-26 09:18:49Z], false}
+      ]
+
+      iex> Collector.Relays.select(:valve6)
+      [
+        {~U[2020-01-26 09:17:40Z], true},
+        {~U[2020-01-26 09:18:49Z], false}
+      ]
+
+  """
+  @spec select(id, timestamp | pos_integer) :: simplified_states
+  def select(id, within \\ 300)
+
+  def select(id, within) when is_atom(id) and is_integer(within) and within > 0 do
+    select(id, to_datetime(within))
+  end
+
+  def select(id, %DateTime{} = since) when is_atom(id) do
+    Storage.select(RelayState, id, since)
+  end
+
+  @doc """
+  Returns states for all, defined relays. The results are limitated to those
+  that were read within last N seconds (default: 5 minutes).
+
+  ## Examples
+
+      iex> Collector.Relays.select_all(60)
+      [
+        heating: [
+          {~U[2020-01-26 09:21:44Z], true},
+          {~U[2020-01-26 09:22:37Z], false}
+        ],
+        pump: [{~U[2020-01-26 09:22:37Z], false}],
+        valve1: [
+          {~U[2020-01-26 09:22:37Z], false},
+          {~U[2020-01-26 09:22:40Z], true}
+        ]
+      ]
+
+      iex> Collector.Relays.select_all()
+      [
+        heating: [
+          {~U[2020-01-26 09:17:48Z], true},
+          {~U[2020-01-26 09:18:49Z], false},
+          {~U[2020-01-26 09:21:36Z], false},
+          {~U[2020-01-26 09:22:45Z], true}
+        ],
+        pump: [
+          {~U[2020-01-26 09:17:40Z], false},
+          {~U[2020-01-26 09:18:49Z], false},
+          {~U[2020-01-26 09:21:36Z], false},
+          {~U[2020-01-26 09:22:37Z], false}
+        ],
+        valve1: [
+          {~U[2020-01-26 09:17:40Z], false},
+          {~U[2020-01-26 09:18:49Z], false},
+          {~U[2020-01-26 09:21:39Z], true},
+          {~U[2020-01-26 09:22:40Z], true}
+        ]
+      ]
+
+  """
+  @spec select_all(timestamp | pos_integer) :: list({id, simplified_states})
+  def select_all(within \\ 300)
+
+  def select_all(within) when is_integer(within) and within > 0 do
+    within |> to_datetime() |> select_all()
+  end
+
+  def select_all(%DateTime{} = since) do
+    Storage.select_all(RelayState, since)
+  end
+
   @spec setup_all :: :ok
   def setup_all, do: get_env(:collector, :relays_map) |> Enum.each(&setup/1)
 
   defp boolean_to_raw_value(true), do: "1"
   defp boolean_to_raw_value(false), do: "0"
-
-  @spec newer({timestamp, value}, {timestamp, value}) :: {timestamp, value}
-  defp newer(nil, candidate), do: candidate
-  defp newer({a, _} = current, {b, _}) when a >= b, do: current
-  defp newer(_current, candidate), do: candidate
 
   defp raw_value_to_boolean("0"), do: false
   defp raw_value_to_boolean("1"), do: true
@@ -119,7 +162,7 @@ defmodule Collector.Relays do
   defp relay_direction(label) do
     label
     |> relay_direction_path()
-    |> @handler.read!()
+    |> Application.get_env(:collector, :filesystem_handler).read!()
     |> String.trim()
   end
 
@@ -139,7 +182,7 @@ defmodule Collector.Relays do
   defp relay_raw_value(label) do
     label
     |> relay_raw_value_path()
-    |> @handler.read!()
+    |> Application.get_env(:collector, :filesystem_handler).read!()
     |> String.trim()
   end
 
@@ -156,7 +199,9 @@ defmodule Collector.Relays do
   end
 
   defp setup({label, pin, direction}) do
-    if relay_directory_path(label) |> @handler.dir?() do
+    handler = Application.get_env(:collector, :filesystem_handler)
+
+    if relay_directory_path(label) |> handler.dir?() do
       Logger.debug(fn -> "Pin #{pin} for #{label} is already exported" end)
     else
       Logger.info(fn -> "Exporing pin #{pin} for #{label}" end)
@@ -164,16 +209,22 @@ defmodule Collector.Relays do
       :ok =
         get_env(:collector, :gpio_base_path)
         |> Path.join("export")
-        |> @handler.write!(to_string(pin))
+        |> handler.write!(to_string(pin))
     end
 
     if relay_direction(label) === direction do
       Logger.debug(fn -> "Pin #{pin} for #{label} is already as #{direction}" end)
     else
       Logger.info(fn -> "Setting up pin #{pin} as #{direction} for #{label}" end)
-      :ok = label |> relay_direction_path() |> @handler.write!(direction)
+      :ok = label |> relay_direction_path() |> handler.write!(direction)
     end
 
     :ok
+  end
+
+  defp to_datetime(seconds) when is_integer(seconds) and seconds > 0 do
+    DateTime.utc_now()
+    |> DateTime.truncate(:second)
+    |> DateTime.add(-seconds, :second)
   end
 end
