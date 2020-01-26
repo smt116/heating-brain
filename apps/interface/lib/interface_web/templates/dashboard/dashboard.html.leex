@@ -6,7 +6,7 @@
 </li>
 <h3>Relays</h3>
 <li>
-  <%= for {label, {timestamp, value}} <- Enum.sort(@relays) do %>
-    <li><%= label %>: <%= value %> at <%= timestamp %></li>
+  <%= for {id, {timestamp, value}} <- Enum.sort(@relays) do %>
+    <li><%= id %>: <%= value %> at <%= timestamp %></li>
   <% end %>
 </li>

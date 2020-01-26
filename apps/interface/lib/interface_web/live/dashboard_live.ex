@@ -10,12 +10,14 @@ defmodule InterfaceWeb.DashboardLive do
     :ok = Interface.subscribe_to_storage()
 
     sensors =
-      Interface.all_sensors_readings() |> Enum.map(fn {id, readings} ->
+      Interface.all_sensors_readings()
+      |> Enum.map(fn {id, readings} ->
         {id, Enum.max_by(readings, &elem(&1, 0))}
       end)
 
     relays =
-      Interface.all_relays_states() |> Enum.map(fn {id, states} ->
+      Interface.all_relays_states()
+      |> Enum.map(fn {id, states} ->
         {id, Enum.max_by(states, &elem(&1, 0))}
       end)
 
@@ -36,6 +38,6 @@ defmodule InterfaceWeb.DashboardLive do
   end
 
   def handle_info({:new_record, %RelayState{} = r}, socket) do
-    {:noreply, update(socket, :relays, &Keyword.put(&1, r.label, {r.timestamp, r.value}))}
+    {:noreply, update(socket, :relays, &Keyword.put(&1, r.id, {r.timestamp, r.value}))}
   end
 end

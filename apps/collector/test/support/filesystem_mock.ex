@@ -149,8 +149,8 @@ defmodule Collector.FilesystemMock do
     GenServer.call(__MODULE__, :refresh_w1_slaves_content)
   end
 
-  def set_relay(label, value) when is_atom(label) and is_boolean(value) do
-    {_, pin, direction} = Enum.find(@relays_map, fn {l, _, _} -> label === l end)
+  def set_relay(id, value) when is_atom(id) and is_boolean(value) do
+    {_, pin, direction} = Enum.find(@relays_map, fn {l, _, _} -> id === l end)
     raw_value = if(value, do: "1\n", else: "0\n")
 
     pin

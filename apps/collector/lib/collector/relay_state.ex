@@ -3,15 +3,15 @@ defmodule Collector.RelayState do
   The struct that represents a state of relay.
   """
 
-  @enforce_keys [:label, :value, :timestamp]
-  defstruct [:label, :value, :timestamp]
+  @enforce_keys [:id, :value, :timestamp]
+  defstruct [:id, :value, :timestamp]
 
-  @type label :: atom
+  @type id :: atom
   @type value :: boolean
 
   @type t ::
           %__MODULE__{
-            label: label,
+            id: id,
             value: boolean,
             timestamp: DateTime.t()
           }
@@ -19,10 +19,10 @@ defmodule Collector.RelayState do
   @doc """
   Initializes struct for a given state. It assigns current timestamp.
   """
-  @spec new(label, value) :: t
-  def new(label, value) when is_atom(label) and is_boolean(value) do
+  @spec new(id, value) :: t
+  def new(id, value) when is_atom(id) and is_boolean(value) do
     %__MODULE__{
-      label: label,
+      id: id,
       value: value,
       timestamp: DateTime.utc_now() |> DateTime.truncate(:second)
     }
@@ -36,7 +36,7 @@ defimpl String.Chars, for: Collector.RelayState do
   ## Examples
 
     iex> %Collector.RelayState{
-    ...>   label: :valve,
+    ...>   id: :valve,
     ...>   timestamp: ~U[2019-10-28 07:52:26.155383Z],
     ...>   value: true
     ...> }
@@ -45,7 +45,7 @@ defimpl String.Chars, for: Collector.RelayState do
 
   """
   @spec to_string(RelayState.t()) :: String.t()
-  def to_string(%RelayState{label: label, value: value, timestamp: timestamp}) do
-    "#{label}: #{value} at #{timestamp}"
+  def to_string(%RelayState{id: id, value: value, timestamp: timestamp}) do
+    "#{id}: #{value} at #{timestamp}"
   end
 end

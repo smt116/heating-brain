@@ -9,11 +9,11 @@ defmodule Collector.RelayStateTest do
 
   describe "new/2" do
     property "converts attributes into the struct with timestamp" do
-      check all label <- atom(:alphanumeric),
+      check all id <- atom(:alphanumeric),
                 value <- boolean() do
-        assert %RelayState{} = relay = new(label, value)
+        assert %RelayState{} = relay = new(id, value)
 
-        assert relay.label === label
+        assert relay.id === id
         assert relay.value === value
         assert %DateTime{} = relay.timestamp
       end

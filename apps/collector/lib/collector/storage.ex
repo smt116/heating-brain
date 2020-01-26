@@ -29,7 +29,7 @@ defmodule Collector.Storage do
   @typep db_m_delete_object :: {:delete_object, db_m, term}
   @typep db_m_delete :: {:delete, {Measurement, db_m_key}, term}
 
-  @typep db_r_key :: {RelayState.label(), unix_timestamp}
+  @typep db_r_key :: {RelayState.id(), unix_timestamp}
   @typep db_r :: {RelayState, db_r_key, boolean}
   @typep db_r_write :: {:write, db_r, term}
   @typep db_r_delete_object :: {:delete_object, db_r, term}
@@ -230,12 +230,8 @@ defmodule Collector.Storage do
     |> handle_write_result(struct)
   end
 
-  defp from_struct(%Measurement{id: id, value: value, timestamp: timestamp}) do
-    {Measurement, {id, DateTime.to_unix(timestamp)}, value}
-  end
-
-  defp from_struct(%RelayState{label: l, value: value, timestamp: timestamp}) do
-    {RelayState, {l, DateTime.to_unix(timestamp)}, value}
+  defp from_struct(%{id: id, value: value, timestamp: timestamp} = r) do
+    {r.__struct__, {id, DateTime.to_unix(timestamp)}, value}
   end
 
   defp handle_select({:atomic, r}, _table) when is_list(r) do
@@ -305,13 +301,8 @@ defmodule Collector.Storage do
 
   defp publish(record), do: GenServer.cast(__MODULE__, {:publish, record})
 
-  defp to_struct({Measurement, {id, unix}, value}) do
+  defp to_struct({struct, {id, unix}, value}) do
     {:ok, timestamp} = DateTime.from_unix(unix)
-    %Measurement{id: id, value: value, timestamp: timestamp}
-  end
-
-  defp to_struct({RelayState, {label, unix}, value}) do
-    {:ok, timestamp} = DateTime.from_unix(unix)
-    %RelayState{label: label, value: value, timestamp: timestamp}
+    %{__struct__: struct, id: id, value: value, timestamp: timestamp}
   end
 end

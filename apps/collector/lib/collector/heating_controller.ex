@@ -15,13 +15,13 @@ defmodule Collector.HeatingController do
   alias Collector.RelayState
   alias Collector.Storage
 
-  @typep label :: RelayState.label()
+  @typep id :: RelayState.id()
   @typep record :: Measurement.t() | RelayState.t()
   @typep value :: RelayState.value()
 
-  @opaque state :: [timer: reference | nil, valves: list({label, value})]
+  @opaque state :: [timer: reference | nil, valves: list({id, value})]
 
-  @heating_label :heating
+  @heating_id :heating
   @initial_state [timer: nil, valves: []]
 
   @impl true
@@ -38,7 +38,7 @@ defmodule Collector.HeatingController do
     if changes_heating_relay_state?(relay_state, state) do
       new_state =
         state
-        |> put_in([:valves, relay_state.label], relay_state.value)
+        |> put_in([:valves, relay_state.id], relay_state.value)
         |> schedule_heating_state_update()
 
       {:noreply, new_state}
@@ -55,7 +55,7 @@ defmodule Collector.HeatingController do
     relay_state = any_valve_enabled?(state[:valves])
 
     Logger.debug(fn -> "Opened valves: #{inspect(state[:valves])}" end)
-    RelayState.new(@heating_label, relay_state) |> put_state()
+    RelayState.new(@heating_id, relay_state) |> put_state()
 
     {:noreply, state}
   end
@@ -66,7 +66,7 @@ defmodule Collector.HeatingController do
       "Disabling heating relay due to termination (#{inspect(reason)})"
     end)
 
-    RelayState.new(@heating_label, false) |> put_state()
+    RelayState.new(@heating_id, false) |> put_state()
   end
 
   @spec start_link(state) :: GenServer.on_start()
@@ -83,11 +83,11 @@ defmodule Collector.HeatingController do
   defp cancel_timer(reference), do: Process.cancel_timer(reference)
 
   defp changes_heating_relay_state?(%RelayState{} = relay_state, state) do
-    is_for_valve?(relay_state.label) && is_distinct?(relay_state, state)
+    is_for_valve?(relay_state.id) && is_distinct?(relay_state, state)
   end
 
-  defp is_distinct?(%RelayState{label: label, value: value}, state) do
-    get_in(state, [:valves, label]) != value
+  defp is_distinct?(%RelayState{id: id, value: value}, state) do
+    get_in(state, [:valves, id]) != value
   end
 
   defp is_for_valve?(l), do: to_string(l) |> String.starts_with?("valve")
@@ -109,6 +109,6 @@ defmodule Collector.HeatingController do
   end
 
   def any_valve_enabled?(valves_states) do
-    Enum.any?(valves_states, fn {_label, value} -> value end)
+    Enum.any?(valves_states, fn {_id, value} -> value end)
   end
 end

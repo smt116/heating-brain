@@ -11,7 +11,7 @@ defmodule Collector.Relays do
   alias Collector.RelayState
   alias Collector.Storage
 
-  @type id :: RelayState.label()
+  @type id :: RelayState.id()
   @type simplified_states :: list({timestamp, value})
   @type timestamp :: DateTime.t()
   @type value :: RelayState.value()
@@ -20,17 +20,17 @@ defmodule Collector.Relays do
   Change the state of relay according to the given struct.
   """
   @spec put_state(RelayState.t()) :: :ok
-  def put_state(%RelayState{label: label, value: value}) do
-    if relay_value(label) == value do
-      Logger.debug(fn -> "#{label} has already #{value} state" end)
+  def put_state(%RelayState{id: id, value: value}) do
+    if relay_value(id) == value do
+      Logger.debug(fn -> "#{id} has already #{value} state" end)
     else
       raw_value = boolean_to_raw_value(value)
 
-      label
+      id
       |> relay_raw_value_path()
       |> Application.get_env(:collector, :filesystem_handler).write!(raw_value)
 
-      :ok = RelayState.new(label, value) |> Storage.write()
+      :ok = RelayState.new(id, value) |> Storage.write()
     end
 
     :ok
@@ -45,17 +45,17 @@ defmodule Collector.Relays do
       iex> Collector.Relays.read_all()
       [
         %Collector.RelayState{
-          label: :heating,
+          id: :heating,
           timestamp: ~U[2019-12-01 09:59:37Z],
           value: true
         },
         %Collector.RelayState{
-          label: :valve1,
+          id: :valve1,
           timestamp: ~U[2019-12-01 09:59:37Z],
           value: false
         },
         %Collector.RelayState{
-          label: :valve2,
+          id: :valve2,
           timestamp: ~U[2019-12-01 09:59:37Z],
           value: true
         }
@@ -64,8 +64,8 @@ defmodule Collector.Relays do
   @spec read_all :: list(RelayState.t())
   def read_all do
     get_env(:collector, :relays_map)
-    |> Stream.map(fn {label, _pin, _direction} -> {label, relay_value(label)} end)
-    |> Enum.map(fn {label, state} -> RelayState.new(label, state) end)
+    |> Stream.map(fn {id, _pin, _direction} -> {id, relay_value(id)} end)
+    |> Enum.map(fn {id, state} -> RelayState.new(id, state) end)
   end
 
   @doc """
@@ -159,52 +159,51 @@ defmodule Collector.Relays do
   defp raw_value_to_boolean("0"), do: false
   defp raw_value_to_boolean("1"), do: true
 
-  defp relay_direction(label) do
-    label
+  defp relay_direction(id) do
+    id
     |> relay_direction_path()
     |> Application.get_env(:collector, :filesystem_handler).read!()
     |> String.trim()
   end
 
-  defp relay_direction_path(label) do
-    label
+  defp relay_direction_path(id) do
+    id
     |> relay_directory_path()
     |> Path.join("direction")
   end
 
-  defp relay_directory_path(label) do
-    {_label, pin, _direction} =
-      get_env(:collector, :relays_map) |> Enum.find(&(elem(&1, 0) === label))
+  defp relay_directory_path(id) do
+    {_id, pin, _direction} = get_env(:collector, :relays_map) |> Enum.find(&(elem(&1, 0) === id))
 
     Path.join([get_env(:collector, :gpio_base_path), "gpio#{to_string(pin)}"])
   end
 
-  defp relay_raw_value(label) do
-    label
+  defp relay_raw_value(id) do
+    id
     |> relay_raw_value_path()
     |> Application.get_env(:collector, :filesystem_handler).read!()
     |> String.trim()
   end
 
-  defp relay_raw_value_path(label) do
-    label
+  defp relay_raw_value_path(id) do
+    id
     |> relay_directory_path()
     |> Path.join("value")
   end
 
-  defp relay_value(label) do
-    label
+  defp relay_value(id) do
+    id
     |> relay_raw_value()
     |> raw_value_to_boolean()
   end
 
-  defp setup({label, pin, direction}) do
+  defp setup({id, pin, direction}) do
     handler = Application.get_env(:collector, :filesystem_handler)
 
-    if relay_directory_path(label) |> handler.dir?() do
-      Logger.debug(fn -> "Pin #{pin} for #{label} is already exported" end)
+    if relay_directory_path(id) |> handler.dir?() do
+      Logger.debug(fn -> "Pin #{pin} for #{id} is already exported" end)
     else
-      Logger.info(fn -> "Exporing pin #{pin} for #{label}" end)
+      Logger.info(fn -> "Exporing pin #{pin} for #{id}" end)
 
       :ok =
         get_env(:collector, :gpio_base_path)
@@ -212,11 +211,11 @@ defmodule Collector.Relays do
         |> handler.write!(to_string(pin))
     end
 
-    if relay_direction(label) === direction do
-      Logger.debug(fn -> "Pin #{pin} for #{label} is already as #{direction}" end)
+    if relay_direction(id) === direction do
+      Logger.debug(fn -> "Pin #{pin} for #{id} is already as #{direction}" end)
     else
-      Logger.info(fn -> "Setting up pin #{pin} as #{direction} for #{label}" end)
-      :ok = label |> relay_direction_path() |> handler.write!(direction)
+      Logger.info(fn -> "Setting up pin #{pin} as #{direction} for #{id}" end)
+      :ok = id |> relay_direction_path() |> handler.write!(direction)
     end
 
     :ok

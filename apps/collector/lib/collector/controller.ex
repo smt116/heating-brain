@@ -15,11 +15,11 @@ defmodule Collector.Controller do
   alias Collector.RelayState
   alias Collector.Storage
 
-  @typep label :: RelayState.label()
+  @typep id :: RelayState.id()
   @typep record :: Measurement.t() | RelayState.t()
   @typep value :: RelayState.value()
 
-  @opaque state :: [{label, {value, reference | nil}}]
+  @opaque state :: [{id, {value, reference | nil}}]
 
   @impl true
   @spec init(state) :: {:ok, state}
@@ -43,14 +43,14 @@ defmodule Collector.Controller do
 
         state
       else
-        {_, label, expected_value} = item
+        {_, id, expected_value} = item
 
         state
-        |> Keyword.put_new(label, {nil, nil})
-        |> Keyword.get_and_update(label, fn {_value, timer} = current ->
+        |> Keyword.put_new(id, {nil, nil})
+        |> Keyword.get_and_update(id, fn {_value, timer} = current ->
           {current, {measurement.value < expected_value, timer}}
         end)
-        |> schedule_relay_state_update(label)
+        |> schedule_relay_state_update(id)
       end
 
     {:noreply, new_state}
@@ -59,12 +59,12 @@ defmodule Collector.Controller do
   @impl true
   def handle_info({:new_record, _}, state), do: {:noreply, state}
 
-  @spec handle_info({:put_relay_state, label}, state) :: {:noreply, state}
-  def handle_info({:put_relay_state, label}, state) do
-    {value, _} = state[label]
-    new_state = Keyword.update!(state, label, fn {value, _} -> {value, nil} end)
+  @spec handle_info({:put_relay_state, id}, state) :: {:noreply, state}
+  def handle_info({:put_relay_state, id}, state) do
+    {value, _} = state[id]
+    new_state = Keyword.update!(state, id, fn {value, _} -> {value, nil} end)
 
-    RelayState.new(label, value) |> put_state()
+    RelayState.new(id, value) |> put_state()
 
     {:noreply, new_state}
   end
@@ -76,7 +76,7 @@ defmodule Collector.Controller do
     end)
 
     get_env(:collector, :relays_map)
-    |> Stream.map(fn {label, _pin, _direction} -> label end)
+    |> Stream.map(fn {id, _pin, _direction} -> id end)
     |> Stream.filter(&(&1 |> to_string() |> String.starts_with?("valve")))
     |> Enum.each(&(RelayState.new(&1, false) |> put_state()))
   end
@@ -90,22 +90,22 @@ defmodule Collector.Controller do
   defp cancel_timer(nil), do: :ok
   defp cancel_timer(reference), do: Process.cancel_timer(reference)
 
-  defp schedule_relay_state_update({{previous_value, timer}, state}, label) do
-    {new_value, _timer} = state[label]
+  defp schedule_relay_state_update({{previous_value, timer}, state}, id) do
+    {new_value, _timer} = state[id]
 
     if previous_value === new_value do
       state
     else
       Logger.debug(fn ->
-        "Relay state for #{label} is going to change from #{previous_value}" <>
+        "Relay state for #{id} is going to change from #{previous_value}" <>
           " to #{new_value}"
       end)
 
       cancel_timer(timer)
       delay = get_env(:collector, :relay_controller_timer)
-      new_timer = Process.send_after(self(), {:put_relay_state, label}, delay)
+      new_timer = Process.send_after(self(), {:put_relay_state, id}, delay)
 
-      Keyword.update!(state, label, fn {value, _} -> {value, new_timer} end)
+      Keyword.update!(state, id, fn {value, _} -> {value, new_timer} end)
     end
   end
 end

@@ -27,11 +27,11 @@ defmodule Collector.Generators do
   def record, do: one_of([measurement(), relay_state()])
 
   def relay_state do
-    gen all label <- one_of([:heating, :pump, :valve1, :valve2]),
+    gen all id <- one_of([:heating, :pump, :valve1, :valve2]),
             timestamp <- timestamp(),
             value <- boolean() do
       %RelayState{
-        label: label,
+        id: id,
         timestamp: timestamp,
         value: value
       }

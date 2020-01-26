@@ -23,11 +23,11 @@ defmodule Collector.RelaysTest do
 
   describe "put_state/1" do
     test "writes the new state to the filesystem" do
-      assert read_all() |> Enum.find(&(&1.label === :valve1 && &1.value === false))
+      assert read_all() |> Enum.find(&(&1.id === :valve1 && &1.value === false))
 
       new(:valve1, true) |> put_state()
 
-      assert read_all() |> Enum.find(&(&1.label === :valve1 && &1.value === true))
+      assert read_all() |> Enum.find(&(&1.id === :valve1 && &1.value === true))
     end
 
     test "writes the new state to the storage" do
@@ -35,7 +35,7 @@ defmodule Collector.RelaysTest do
 
       new(:valve1, true) |> put_state()
 
-      assert_receive({:new_record, %RelayState{label: :valve1, value: true}})
+      assert_receive({:new_record, %RelayState{id: :valve1, value: true}})
 
       self() |> Storage.unsubscribe()
     end
@@ -43,11 +43,11 @@ defmodule Collector.RelaysTest do
     test "does not change the state if it is already set" do
       new(:valve1, true) |> put_state()
 
-      assert read_all() |> Enum.find(&(&1.label === :valve1 && &1.value === true))
+      assert read_all() |> Enum.find(&(&1.id === :valve1 && &1.value === true))
 
       new(:valve1, true) |> put_state()
 
-      assert read_all() |> Enum.find(&(&1.label === :valve1 && &1.value === true))
+      assert read_all() |> Enum.find(&(&1.id === :valve1 && &1.value === true))
     end
   end
 
@@ -58,19 +58,19 @@ defmodule Collector.RelaysTest do
 
       assert [
                %RelayState{
-                 label: :heating,
+                 id: :heating,
                  value: true
                },
                %RelayState{
-                 label: :pump,
+                 id: :pump,
                  value: false
                },
                %RelayState{
-                 label: :valve1,
+                 id: :valve1,
                  value: true
                },
                %RelayState{
-                 label: :valve2,
+                 id: :valve2,
                  value: false
                }
              ] = read_all()
