@@ -24,6 +24,13 @@
 ./server/deploy
 ```
 
+## Restoring Mnesia backup
+
+```bash
+rm -rf /opt/heating_brain/mnesia/*
+tar -xzvf /srv/backups/mnesia.2020.01.28.21.20.tar.gz --strip-components=3 -C /opt/heating_brain/mnesia/
+```
+
 ## Resources
 
 * (Mnesia manual)[http://erlang.org/doc/man/mnesia.html]

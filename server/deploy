@@ -39,7 +39,7 @@ label "Enabling systemd service unit"
 run "ssh brain \"systemctl --user enable heating_brain\""
 
 label "Backing up database"
-run "ssh brain \"tar -czvf /srv/backups/mnesia.$(date +'%Y.%m.%d.%R').tar.gz /opt/heating_brain/mnesia\""
+run "ssh brain \"tar -czvf /srv/backups/mnesia.$(date +'%Y.%m.%d.%H.%M.%S').tar.gz /opt/heating_brain/mnesia\""
 run "ssh brain \"find /srv/backups -type f -mtime +30 -ls -exec rm -f -- {} \;\""
 
 label "Creating a new release"
