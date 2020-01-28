@@ -18,35 +18,32 @@ function run() {
 }
 
 label "Building static assets"
-run "cd apps/interface/assets"
-run "npm install"
-run "npm run deploy"
-run "cd -"
+run "npm --prefix apps/interface/assets install"
+run "npm --prefix apps/interface/assets run deploy"
 
-label "Digest and compress static files"
+label "Digesting and compressing static files"
 run "cd apps/interface"
 run "mix phx.digest"
 run "cd -"
 
 label "Uploading files to the server"
-run "rsync -rav --exclude-from=.gitignore --exclude=.git --prune-empty-dirs . brain:/opt/brain"
+run "rsync -rav --exclude-from=.gitignore --exclude=.git --prune-empty-dirs . brain:/opt/heating_brain"
 
 label "Updating systemd service unit"
-run "ssh brain \"cp /opt/brain/server/systemd/user/brain.service ~/.config/systemd/user/brain.service\""
+run "ssh brain \"cp /opt/heating_brain/server/systemd/user/heating_brain.service ~/.config/systemd/user/heating_brain.service\""
 
 label "Reloading systemd daemon"
 run "ssh brain \"systemctl --user daemon-reload\""
 
 label "Enabling systemd service unit"
-run "ssh brain \"systemctl --user enable brain\""
+run "ssh brain \"systemctl --user enable heating_brain\""
 
 label "Backing up database"
-run "ssh brain \"tar -czvf /srv/backups/mnesia.$(date +'%Y.%m.%d.%R').tar.gz /opt/brain/mnesia\""
+run "ssh brain \"tar -czvf /srv/backups/mnesia.$(date +'%Y.%m.%d.%R').tar.gz /opt/heating_brain/mnesia\""
 run "ssh brain \"find /srv/backups -type f -mtime +30 -ls -exec rm -f -- {} \;\""
 
 label "Creating a new release"
-run "ssh brain \"/opt/brain/server/compile\""
+run "ssh brain \"/opt/heating_brain/server/compile\""
 
-# FIXME: is it needed?
 label "Restarting the application"
-run "ssh brain \"/bin/systemctl --user restart brain\""
+run "ssh brain \"/bin/systemctl --user restart heating_brain\""

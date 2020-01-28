@@ -1,4 +1,4 @@
-# Brain
+# Heating Brain
 
 ## Requirements
 
@@ -12,9 +12,9 @@
 
     ```bash
     # as root
-    loginctl enable-linger app
+    loginctl enable-linger pi
 
-    # as app
+    # as user
     echo "export XDG_RUNTIME_DIR=/run/user/$(id -u)" >> ~/.bashrc
     ```
 

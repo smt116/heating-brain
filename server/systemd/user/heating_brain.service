@@ -1,24 +1,24 @@
 [Unit]
-Description=Brain Application
+Description=Heating Brain Application
 After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/brain
+WorkingDirectory=/opt/heating_brain
 Environment="MIX_ENV=prod"
 
-ExecStart=/usr/bin/sudo /opt/brain/_build/prod/rel/brain/bin/brain start
+ExecStart=/usr/bin/sudo /opt/heating_brain/_build/prod/rel/heating_brain/bin/heating_brain start
 ExecStop=/usr/bin/sudo /bin/kill -SIGTERM $MAINPID
 
 Restart=always
-RestartSec=5
+RestartSec=30s
 TimeoutStopSec=30s
 
 OOMScoreAdjust=500
 
 StandardError=syslog
 StandardOutput=syslog
-SyslogIdentifier=brain
+SyslogIdentifier=heating_brain
 
 [Install]
 WantedBy=default.target

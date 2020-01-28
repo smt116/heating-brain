@@ -1,4 +1,4 @@
-defmodule Brain.MixProject do
+defmodule HeatingBrain.MixProject do
   use Mix.Project
 
   def project do
@@ -47,7 +47,7 @@ defmodule Brain.MixProject do
 
   defp releases do
     [
-      brain: [
+      heating_brain: [
         applications: [
           collector: :permanent,
           mnesia: :load,
