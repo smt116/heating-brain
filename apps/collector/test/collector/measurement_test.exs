@@ -9,12 +9,11 @@ defmodule Collector.MeasurementTest do
 
   describe "new/2" do
     property "converts attributes into the struct with timestamp" do
-      check all raw_id <- string(:printable),
+      check all id <- atom(:alphanumeric),
                 value <- float() do
-        assert %Measurement{} = measurement = new(raw_id, value)
+        assert %Measurement{} = measurement = new(id, value)
 
         assert is_atom(measurement.id)
-        assert measurement.id === String.to_atom(raw_id)
 
         assert measurement.value === value
         assert %DateTime{} = measurement.timestamp

@@ -51,33 +51,33 @@ defmodule Collector.Sensors do
 
       iex> Collector.Sensors.select_all(90)
       [
-        "28-0118761f69ff": [
-          {~U[2020-01-26 08:40:38Z], 22.0},
-        ],
-        "28-01187654b6ff": [
+        case: [
           {~U[2020-01-26 08:40:38Z], 22.0},
           {~U[2020-01-26 08:40:48Z], 21.0}
         ],
-        "28-01187615e4ff": [
+        living_room: [
           {~U[2020-01-26 08:40:48Z], 24.0}
+        ],
+        pipe: [
+          {~U[2020-01-26 08:40:38Z], 22.0},
         ]
       ]
 
       iex> Collector.Sensors.select_all()
       [
-        "28-0118761f69ff": [
-          {~U[2020-01-26 08:40:38Z], 22.0},
-          {~U[2020-01-26 08:40:48Z], 22.2}
-        ],
-        "28-01187654b6ff": [
+        case: [
           {~U[2020-01-26 08:40:38Z], 22.0},
           {~U[2020-01-26 08:40:48Z], 21.0}
         ],
-        "28-01187615e4ff": [
+        living_room: [
           {~U[2020-01-26 08:37:38Z], 22.0},
           {~U[2020-01-26 08:38:58Z], 21.0},
           {~U[2020-01-26 08:39:58Z], 22.5},
           {~U[2020-01-26 08:40:48Z], 24.0}
+        ],
+        pipe: [
+          {~U[2020-01-26 08:40:38Z], 22.0},
+          {~U[2020-01-26 08:40:48Z], 22.2}
         ]
       ]
 
@@ -91,6 +91,8 @@ defmodule Collector.Sensors do
 
   def select_all(%DateTime{} = since) do
     Storage.select_all(Measurement, since)
+    |> Stream.map(fn {id, results} -> {Collector.OneWire.label(id), results} end)
+    |> Enum.sort()
   end
 
   defp to_datetime(seconds) when is_integer(seconds) and seconds > 0 do

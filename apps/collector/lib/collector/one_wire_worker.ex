@@ -12,7 +12,7 @@ defmodule Collector.OneWireWorker do
 
   @opaque state :: [last_read_at: pos_integer]
   @typep from :: GenServer.from()
-  @type id :: Collector.Measurement.raw_id()
+  @type id :: Collector.Measurement.id()
 
   @delay_between_readings Application.get_env(:collector, :w1_bus_delay_between_readings)
 
@@ -86,7 +86,7 @@ defmodule Collector.OneWireWorker do
       ]
 
   """
-  @spec read(String.t()) :: OneWire.read()
+  @spec read(id) :: OneWire.read()
   def read(id), do: GenServer.call(__MODULE__, {:read, id})
 
   defp by({:ok, %{id: id}}), do: {0, id}

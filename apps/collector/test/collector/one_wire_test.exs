@@ -15,7 +15,6 @@ defmodule Collector.OneWireTest do
         expected_ids =
           tuples
           |> Stream.map(fn {id, _} -> id end)
-          |> Stream.map(&to_string/1)
           |> Stream.uniq()
           |> Enum.sort()
 
@@ -41,7 +40,7 @@ defmodule Collector.OneWireTest do
                   id: ^id,
                   timestamp: _,
                   value: actual_value
-                }} = to_string(measurement.id) |> read()
+                }} = read(measurement.id)
 
         assert Float.round(actual_value, 1) === Float.round(value, 1)
       end
@@ -50,7 +49,7 @@ defmodule Collector.OneWireTest do
     test "returns an error tuple on malformed reading" do
       FilesystemMock.set_sensor(:foo, 24.011, malformed: true)
 
-      assert read("foo") ===
+      assert read(:foo) ===
                {:error,
                 "foo read failed: \"60 01 4b 14 : crc=14 NO\\n" <>
                   "7f ff 0c 10 14 t=24011\\n\""}
@@ -59,7 +58,7 @@ defmodule Collector.OneWireTest do
     test "does not include readings with power-on reset value" do
       FilesystemMock.set_sensor(:foo, 85.0)
 
-      assert read("foo") === {:error, "foo reported power-on reset value"}
+      assert read(:foo) === {:error, "foo reported power-on reset value"}
     end
   end
 end

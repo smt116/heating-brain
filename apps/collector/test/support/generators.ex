@@ -16,11 +16,7 @@ defmodule Collector.Generators do
     gen all id <- id(),
             timestamp <- timestamp(),
             value <- temp() do
-      %Measurement{
-        id: id,
-        timestamp: timestamp,
-        value: value
-      }
+      Measurement.new(id, value, timestamp)
     end
   end
 
@@ -30,11 +26,7 @@ defmodule Collector.Generators do
     gen all id <- one_of([:heating, :pump, :valve1, :valve2]),
             timestamp <- timestamp(),
             value <- boolean() do
-      %RelayState{
-        id: id,
-        timestamp: timestamp,
-        value: value
-      }
+      RelayState.new(id, value, timestamp)
     end
   end
 

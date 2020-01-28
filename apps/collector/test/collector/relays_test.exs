@@ -15,8 +15,8 @@ defmodule Collector.RelaysTest do
 
   import Collector.Storage, only: [write: 1]
 
-  alias Collector.RelayState
   alias Collector.Relays
+  alias Collector.RelayState
   alias Collector.Storage
 
   @relays_map Application.get_env(:collector, :relays_map)

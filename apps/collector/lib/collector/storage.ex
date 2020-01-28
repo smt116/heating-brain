@@ -303,6 +303,6 @@ defmodule Collector.Storage do
 
   defp to_struct({struct, {id, unix}, value}) do
     {:ok, timestamp} = DateTime.from_unix(unix)
-    %{__struct__: struct, id: id, value: value, timestamp: timestamp}
+    struct.new(id, value, timestamp)
   end
 end

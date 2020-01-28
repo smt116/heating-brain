@@ -7,25 +7,31 @@ defmodule Collector.RelayState do
   defstruct [:id, :value, :timestamp]
 
   @type id :: atom
+  @type timestamp :: DateTime.t()
   @type value :: boolean
 
   @type t ::
           %__MODULE__{
             id: id,
             value: boolean,
-            timestamp: DateTime.t()
+            timestamp: timestamp
           }
 
   @doc """
-  Initializes struct for a given state. It assigns current timestamp.
+  Initializes struct for a given state. It assigns current timestamp if missing.
   """
-  @spec new(id, value) :: t
-  def new(id, value) when is_atom(id) and is_boolean(value) do
+  @spec new(id, value, timestamp | nil) :: t
+  def new(id, val, %DateTime{} = timestamp) when is_atom(id) and is_boolean(val) do
     %__MODULE__{
       id: id,
-      value: value,
-      timestamp: DateTime.utc_now() |> DateTime.truncate(:second)
+      value: val,
+      timestamp: timestamp
     }
+  end
+
+  def new(id, val) when is_atom(id) and is_boolean(val) do
+    timestamp = DateTime.utc_now() |> DateTime.truncate(:second)
+    new(id, val, timestamp)
   end
 end
 

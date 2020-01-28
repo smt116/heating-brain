@@ -16,7 +16,7 @@ defmodule Collector.Reader do
   alias Collector.Measurement
 
   @opaque state :: []
-  @typep raw_id :: Measurement.raw_id()
+  @typep id :: Measurement.id()
 
   @impl true
   @spec init(state) :: {:ok, state}
@@ -34,7 +34,7 @@ defmodule Collector.Reader do
   end
 
   @impl true
-  @spec handle_cast({:read, raw_id}, state) :: {:noreply, state}
+  @spec handle_cast({:read, id}, state) :: {:noreply, state}
   def handle_cast({:read, id}, state) do
     id |> read() |> handle_read_result()
 

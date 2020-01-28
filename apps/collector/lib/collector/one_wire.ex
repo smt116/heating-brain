@@ -6,7 +6,8 @@ defmodule Collector.OneWire do
   alias Collector.Measurement
 
   @type error :: String.t()
-  @type raw_id :: Measurement.raw_id()
+  @type id :: Measurement.id()
+  @type label :: Measurement.label()
   @type read :: {:ok, Measurement.t()} | {:error, error}
   @type temperature :: float
 
@@ -16,7 +17,7 @@ defmodule Collector.OneWire do
   @doc """
   Translates the sensor identifier into the human-readable label (if available).
   """
-  @spec label(Measurement.id()) :: atom()
+  @spec label(id) :: label
   def label(id) when is_atom(id) do
     Application.get_env(:collector, :sensors_label_map) |> Keyword.get(id, id)
   end
@@ -31,12 +32,13 @@ defmodule Collector.OneWire do
       [:foo, :bar]
 
   """
-  @spec sensors :: list(raw_id)
+  @spec sensors :: list(id)
   def sensors do
     @w1_bus_master1_path
     |> Path.join("w1_master_slaves")
     |> @handler.read!()
     |> String.split()
+    |> Stream.map(&String.to_atom/1)
     |> Enum.sort()
   end
 
@@ -45,21 +47,20 @@ defmodule Collector.OneWire do
 
   ## Examples
 
-      iex> Collector.OneWire.value(:foo)
+      iex> Collector.OneWire.read(:foo)
       {:ok, %Collector.Measurement{
         id: :"28-0118761f69ff",
         timestamp: ~U[2019-10-28 07:52:26.155383Z],
         value: 23.187
       }}
 
-      iex> Collector.OneWire.value(:bar)
+      iex> Collector.OneWire.read(:bar)
       {:error, "bar reported power-on reset value"}
 
   """
-  @spec read(raw_id) :: read
-  def read(id) when is_binary(id) do
+  @spec read(id) :: read
+  def read(id) when is_atom(id) do
     id
-    |> to_string()
     |> sensor_output_path()
     |> @handler.read!()
     |> extract_temperature(id)
@@ -69,9 +70,9 @@ defmodule Collector.OneWire do
   # The 1-wire master bus directory includes subdirectories for all conencted
   # sensors. Each such subdirectory includes `w1_slave` file that can be used
   # for fetching sensor value.
-  defp sensor_output_path(id) when is_binary(id) do
+  defp sensor_output_path(id) when is_atom(id) do
     @w1_bus_master1_path
-    |> Path.join(id)
+    |> Path.join(to_string(id))
     |> Path.join("w1_slave")
   end
 
@@ -82,7 +83,7 @@ defmodule Collector.OneWire do
   #
   # where `YES` means that the reading is not malformed and `t=22000` means that
   # the current temperature is 22°C.
-  defp extract_temperature(output, id) when is_binary(id) and is_binary(output) do
+  defp extract_temperature(output, id) when is_atom(id) and is_binary(output) do
     [first, second] =
       output
       |> String.trim()
@@ -92,7 +93,7 @@ defmodule Collector.OneWire do
       ~r/t=(?<temperature>[-\d]+)/
       |> Regex.named_captures(second)
       |> Map.fetch!("temperature")
-      |> handle_raw_temperature(to_string(id))
+      |> handle_raw_temperature(id)
     else
       {:error, "#{id} read failed: #{inspect(output)}"}
     end
