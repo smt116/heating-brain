@@ -59,7 +59,7 @@ defmodule Collector.Storage do
     :ok = Mnesia.start()
     :ok = initialize_table(Measurement, [:reading, :unix])
     :ok = initialize_table(RelayState, [:state, :unix])
-    :ok = Mnesia.wait_for_tables([Measurement, RelayState], 5000)
+    :ok = Mnesia.wait_for_tables([Measurement, RelayState], 60_000)
 
     Enum.each([Measurement, RelayState], fn table ->
       Logger.info(fn -> "Subscribing to #{table} table events" end)
