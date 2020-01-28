@@ -1,12 +1,26 @@
-<h3>Sensors</h3>
-<li>
-  <%= for {id, {timestamp, value}} <- Enum.sort(@sensors) do %>
-    <li><%= sensor_label(id) %>: <%= value %>°C at <%= timestamp %></li>
+<%= if Enum.any?(@sensors) do %>
+  <h3>Sensors</h3>
+  <%= for {label, {{last_read_at, value}, dataset, labels}} <- @sensors do %>
+    <h4><%= label %> <%= value %>°C at <%= last_read_at %></h4>
+    <div id="<%= label %>"
+         data-label="<%= label %>"
+         data-labels="<%= Jason.encode!(labels) %>"
+         data-dataset="<%= Jason.encode!(dataset) %>"
+         data-current-label="<%= last_read_at %>"
+         data-current-value="<%= value %>"
+         phx-hook="ChartHook">
+      <div phx-update="ignore">
+        <canvas class="chartContainer" />
+      </div>
+    </div>
   <% end %>
-</li>
-<h3>Relays</h3>
-<li>
-  <%= for {id, {timestamp, value}} <- Enum.sort(@relays) do %>
-    <li><%= id %>: <%= value %> at <%= timestamp %></li>
-  <% end %>
-</li>
+<% end %>
+
+<%= if Enum.any?(@relays) do %>
+  <h3>Relays</h3>
+  <ul>
+    <%= for {id, {timestamp, value}} <- Enum.sort(@relays) do %>
+      <li><%= id %>: <%= value %> at <%= timestamp %></li>
+    <% end %>
+  </ul>
+<% end %>

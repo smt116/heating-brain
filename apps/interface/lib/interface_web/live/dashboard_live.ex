@@ -3,6 +3,8 @@ defmodule InterfaceWeb.DashboardLive do
 
   use Phoenix.LiveView
 
+  import DateTime, only: [to_time: 1]
+
   alias Collector.Measurement
   alias Collector.RelayState
 
@@ -10,9 +12,19 @@ defmodule InterfaceWeb.DashboardLive do
     :ok = Interface.subscribe_to_storage()
 
     sensors =
-      Interface.all_sensors_readings()
+      Interface.all_sensors_readings(43_200)
       |> Enum.map(fn {id, readings} ->
-        {id, Enum.max_by(readings, &elem(&1, 0))}
+        {last_read_at, current_value} = Enum.max_by(readings, &elem(&1, 0))
+        {labels, dataset} = Enum.unzip(readings)
+
+        {
+          Interface.sensor_label(id),
+          {
+            {to_time(last_read_at), current_value},
+            Enum.drop(dataset, -1),
+            Enum.map(labels, &to_time/1)
+          }
+        }
       end)
 
     relays =
@@ -34,10 +46,20 @@ defmodule InterfaceWeb.DashboardLive do
   end
 
   def handle_info({:new_record, %Measurement{} = m}, socket) do
-    {:noreply, update(socket, :sensors, &Keyword.put(&1, m.id, {m.timestamp, m.value}))}
+    socket =
+      update(socket, :sensors, fn sensors ->
+        label = Interface.sensor_label(m.id)
+
+        Keyword.update!(sensors, label, fn {_, dataset, labels} ->
+          {{to_time(m.timestamp), m.value}, dataset, labels}
+        end)
+      end)
+
+    {:noreply, socket}
   end
 
   def handle_info({:new_record, %RelayState{} = r}, socket) do
     {:noreply, update(socket, :relays, &Keyword.put(&1, r.id, {r.timestamp, r.value}))}
+    {:noreply, socket}
   end
 end

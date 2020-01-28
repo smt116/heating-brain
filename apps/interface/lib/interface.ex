@@ -8,6 +8,6 @@ defmodule Interface do
   defdelegate subscribe_to_storage, to: Collector, as: :subscribe
   defdelegate unsubscribe_from_storage(pid), to: Collector, as: :unsubscribe
 
-  defdelegate all_sensors_readings, to: Collector
+  defdelegate all_sensors_readings(within), to: Collector
   defdelegate all_relays_states, to: Collector
 end
