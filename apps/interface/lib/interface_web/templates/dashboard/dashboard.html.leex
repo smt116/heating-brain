@@ -1,7 +1,7 @@
 <%= if Enum.any?(@sensors) do %>
   <h3>Sensors</h3>
-  <%= for {label, {{last_read_at, value}, dataset, labels}} <- @sensors do %>
-    <h4><%= label %> <%= value %>°C at <%= last_read_at %></h4>
+  <%= for {label, {{last_read_at, value}, eval, dataset, labels}} <- @sensors do %>
+    <h4><%= label %> <%= value %>°C at <%= last_read_at %> (expected: <%= eval || "none" %>)</h4>
     <div id="<%= label %>"
          data-label="<%= label %>"
          data-labels="<%= Jason.encode!(labels) %>"

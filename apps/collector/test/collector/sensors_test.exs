@@ -5,6 +5,7 @@ defmodule Collector.SensorsTest do
 
   import Collector.Sensors,
     only: [
+      expected_values: 0,
       select: 1,
       select: 2,
       select_all: 0,
@@ -12,6 +13,16 @@ defmodule Collector.SensorsTest do
     ]
 
   import Collector.Storage, only: [write: 1]
+
+  describe "expected_values/0" do
+    test "returns parsed sensors map" do
+      assert expected_values() === [
+               bathroom: 23.5,
+               case: nil,
+               living_room: 21.0
+             ]
+    end
+  end
 
   describe "select/1" do
     test "fetches readings for a given sensor" do

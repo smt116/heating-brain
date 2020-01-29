@@ -195,7 +195,7 @@ defmodule Collector.FilesystemMock do
   end
 
   defp sensor_paths(id, content \\ @sensor_output)
-  defp sensor_paths({id, _, _}, content), do: sensor_paths(id, content)
+  defp sensor_paths({id, _, _, _}, content), do: sensor_paths(id, content)
   defp sensor_paths(id, c) when is_atom(id), do: to_string(id) |> sensor_paths(c)
 
   defp sensor_paths(id, content) when is_binary(id) and is_binary(content) do

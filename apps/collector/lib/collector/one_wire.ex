@@ -19,7 +19,9 @@ defmodule Collector.OneWire do
   """
   @spec label(id) :: label
   def label(id) when is_atom(id) do
-    Application.get_env(:collector, :sensors_label_map) |> Keyword.get(id, id)
+    Application.get_env(:collector, :sensors_map)
+    |> Enum.map(fn {i, label, _, _} -> {i, label} end)
+    |> Keyword.get(id, id)
   end
 
   @doc """

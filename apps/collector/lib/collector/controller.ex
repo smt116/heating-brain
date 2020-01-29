@@ -43,7 +43,7 @@ defmodule Collector.Controller do
 
         state
       else
-        {_, id, expected_value} = item
+        {_, _, id, expected_value} = item
 
         state
         |> Keyword.put_new(id, {nil, nil})

@@ -8,9 +8,30 @@ defmodule Collector.Sensors do
   alias Collector.Storage
 
   @type id :: Measurement.id()
+  @type label :: Measurement.label()
   @type simplified_readings :: list({timestamp, value})
   @type timestamp :: DateTime.t()
   @type value :: Measurement.value()
+
+  @doc """
+  Returns expected values for given sensor labels.
+
+  ## Examples
+
+      iex> Collector.Sensors.expected_values()
+      [
+        bathroom: 23.5,
+        case: nil,
+        living_room: 21.0
+      ]
+
+  """
+  @spec expected_values :: list({label, value})
+  def expected_values do
+    Application.get_env(:collector, :sensors_map)
+    |> Stream.map(fn {_, label, _, expected_value} -> {label, expected_value} end)
+    |> Enum.sort()
+  end
 
   @doc """
   Returns readings for a given sensor. The results are limitated to those that were

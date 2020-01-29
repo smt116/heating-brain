@@ -11,6 +11,8 @@ defmodule InterfaceWeb.DashboardLive do
   def mount(_params, _session, socket) do
     :ok = Interface.subscribe_to_storage()
 
+    expected_values = Interface.expected_sensors_values()
+
     sensors =
       Interface.sensors_readings(43_200)
       |> Enum.map(fn {id, readings} ->
@@ -21,6 +23,7 @@ defmodule InterfaceWeb.DashboardLive do
           id,
           {
             {to_time(last_read_at), current_value},
+            expected_values[id],
             Enum.drop(dataset, -1),
             Enum.map(labels, &to_time/1)
           }
@@ -48,8 +51,8 @@ defmodule InterfaceWeb.DashboardLive do
   def handle_info({:new_record, %Measurement{} = m}, socket) do
     socket =
       update(socket, :sensors, fn sensors ->
-        Keyword.update!(sensors, m.label, fn {_, dataset, labels} ->
-          {{to_time(m.timestamp), m.value}, dataset, labels}
+        Keyword.update!(sensors, m.label, fn {_, eval, dataset, labels} ->
+          {{to_time(m.timestamp), m.value}, eval, dataset, labels}
         end)
       end)
 
