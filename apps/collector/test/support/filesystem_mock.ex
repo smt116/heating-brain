@@ -132,14 +132,19 @@ defmodule Collector.FilesystemMock do
   end
 
   def reset do
-    clear()
-    Collector.Relays.setup_all()
+    :ok = clear()
+    :ok = Collector.Relays.setup_all()
   end
 
-  def set_sensor(id, value, opts \\ []) when is_atom(id) and is_float(value) do
+  def set_sensor(label, val, opts \\ []) when is_atom(label) and is_float(val) do
+    id =
+      Application.get_env(:collector, :sensors_map)
+      |> Enum.find({label, label}, &(elem(&1, 1) === label))
+      |> elem(0)
+
     content =
       @sensor_output
-      |> String.replace("22000", trunc(value * 1000) |> to_string())
+      |> String.replace("22000", trunc(val * 1000) |> to_string())
       |> String.replace("YES", if(opts[:malformed], do: "NO", else: "YES"))
 
     id

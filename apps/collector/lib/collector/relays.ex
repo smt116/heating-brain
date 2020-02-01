@@ -12,8 +12,9 @@ defmodule Collector.Relays do
   alias Collector.Storage
 
   @type id :: RelayState.id()
-  @type simplified_states :: list({timestamp, value})
+  @type relay_state :: RelayState.t()
   @type timestamp :: DateTime.t()
+  @type unix_epoch :: pos_integer
   @type value :: RelayState.value()
 
   @doc """
@@ -28,7 +29,7 @@ defmodule Collector.Relays do
 
       id
       |> relay_raw_value_path()
-      |> Application.get_env(:collector, :filesystem_handler).write!(raw_value)
+      |> get_env(:collector, :filesystem_handler).write!(raw_value)
 
       :ok = RelayState.new(id, value) |> Storage.write()
     end
@@ -39,27 +40,6 @@ defmodule Collector.Relays do
   @doc """
   Reads current values from the file system. It does not interact with the
   database.
-
-  ## Examples
-
-      iex> Collector.Relays.read_all()
-      [
-        %Collector.RelayState{
-          id: :heating,
-          timestamp: ~U[2019-12-01 09:59:37Z],
-          value: true
-        },
-        %Collector.RelayState{
-          id: :valve1,
-          timestamp: ~U[2019-12-01 09:59:37Z],
-          value: false
-        },
-        %Collector.RelayState{
-          id: :valve2,
-          timestamp: ~U[2019-12-01 09:59:37Z],
-          value: true
-        }
-      ]
   """
   @spec read_all :: list(RelayState.t())
   def read_all do
@@ -69,26 +49,9 @@ defmodule Collector.Relays do
   end
 
   @doc """
-  Returns states for a given relay. The results are limitated to those that were
-  read within last N seconds (default: 5 minutes).
-
-  ## Examples
-
-      iex> Collector.Relays.select(:valve6, 60)
-      [
-        {~U[2020-01-26 09:18:49Z], false}
-      ]
-
-      iex> Collector.Relays.select(:valve6)
-      [
-        {~U[2020-01-26 09:17:40Z], true},
-        {~U[2020-01-26 09:18:49Z], false}
-      ]
-
+  Returns states for a given relay from the database.
   """
-  @spec select(id, timestamp | pos_integer) :: simplified_states
-  def select(id, within \\ 300)
-
+  @spec select(id, timestamp | pos_integer) :: list(relay_state)
   def select(id, within) when is_atom(id) and is_integer(within) and within > 0 do
     select(id, to_datetime(within))
   end
@@ -98,56 +61,15 @@ defmodule Collector.Relays do
   end
 
   @doc """
-  Returns states for all, defined relays. The results are limitated to those
-  that were read within last N seconds (default: 5 minutes).
-
-  ## Examples
-
-      iex> Collector.Relays.select_all(60)
-      [
-        heating: [
-          {~U[2020-01-26 09:21:44Z], true},
-          {~U[2020-01-26 09:22:37Z], false}
-        ],
-        pump: [{~U[2020-01-26 09:22:37Z], false}],
-        valve1: [
-          {~U[2020-01-26 09:22:37Z], false},
-          {~U[2020-01-26 09:22:40Z], true}
-        ]
-      ]
-
-      iex> Collector.Relays.select_all()
-      [
-        heating: [
-          {~U[2020-01-26 09:17:48Z], true},
-          {~U[2020-01-26 09:18:49Z], false},
-          {~U[2020-01-26 09:21:36Z], false},
-          {~U[2020-01-26 09:22:45Z], true}
-        ],
-        pump: [
-          {~U[2020-01-26 09:17:40Z], false},
-          {~U[2020-01-26 09:18:49Z], false},
-          {~U[2020-01-26 09:21:36Z], false},
-          {~U[2020-01-26 09:22:37Z], false}
-        ],
-        valve1: [
-          {~U[2020-01-26 09:17:40Z], false},
-          {~U[2020-01-26 09:18:49Z], false},
-          {~U[2020-01-26 09:21:39Z], true},
-          {~U[2020-01-26 09:22:40Z], true}
-        ]
-      ]
-
+  Returns states for all, defined relays from the database.
   """
-  @spec select_all(timestamp | pos_integer) :: list({id, simplified_states})
-  def select_all(within \\ 300)
-
-  def select_all(within) when is_integer(within) and within > 0 do
-    within |> to_datetime() |> select_all()
+  @spec select(timestamp | pos_integer) :: list({id, list(relay_state)})
+  def select(within) when is_integer(within) and within > 0 do
+    within |> to_datetime() |> select()
   end
 
-  def select_all(%DateTime{} = since) do
-    Storage.select_all(RelayState, since)
+  def select(%DateTime{} = since) do
+    Storage.select(RelayState, since)
   end
 
   @spec setup_all :: :ok
@@ -162,7 +84,7 @@ defmodule Collector.Relays do
   defp relay_direction(id) do
     id
     |> relay_direction_path()
-    |> Application.get_env(:collector, :filesystem_handler).read!()
+    |> get_env(:collector, :filesystem_handler).read!()
     |> String.trim()
   end
 
@@ -181,7 +103,7 @@ defmodule Collector.Relays do
   defp relay_raw_value(id) do
     id
     |> relay_raw_value_path()
-    |> Application.get_env(:collector, :filesystem_handler).read!()
+    |> get_env(:collector, :filesystem_handler).read!()
     |> String.trim()
   end
 
@@ -198,7 +120,7 @@ defmodule Collector.Relays do
   end
 
   defp setup({id, pin, direction}) do
-    handler = Application.get_env(:collector, :filesystem_handler)
+    handler = get_env(:collector, :filesystem_handler)
 
     if relay_directory_path(id) |> handler.dir?() do
       Logger.debug(fn -> "Pin #{pin} for #{id} is already exported" end)

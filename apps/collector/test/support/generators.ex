@@ -12,11 +12,18 @@ defmodule Collector.Generators do
 
   def id, do: atom(:alphanumeric)
 
+  def measurement_id do
+    Application.get_env(:collector, :sensors_map)
+    |> Enum.map(&elem(&1, 1))
+    |> one_of()
+  end
+
   def measurement do
-    gen all id <- id(),
+    gen all id <- measurement_id(),
             timestamp <- timestamp(),
-            value <- temp() do
-      Measurement.new(id, value, timestamp)
+            value <- temp(),
+            expected_value <- temp() do
+      Measurement.new(id, value, expected_value, timestamp)
     end
   end
 
@@ -32,7 +39,7 @@ defmodule Collector.Generators do
 
   def temp, do: map(float(min: -30.0, max: 60.0), &Float.round(&1, 3))
 
-  defp timestamp do
+  def timestamp do
     map(
       positive_integer(),
       &(utc_now() |> DateTime.add(-&1, :second) |> DateTime.truncate(:second))

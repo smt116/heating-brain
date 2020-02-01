@@ -1,9 +1,10 @@
 defmodule Collector.ReaderTest do
   use Collector.DataCase, async: false
 
-  import Collector.Sensors, only: [select: 1]
+  import Collector.Sensors, only: [select: 2]
   import ExUnit.CaptureLog
 
+  alias Collector.Measurement
   alias Collector.Reader
   alias Collector.Storage
 
@@ -20,8 +21,8 @@ defmodule Collector.ReaderTest do
 
       Enum.each(1..2, fn _ -> assert_receive({:new_record, _}) end)
 
-      assert [{_, 23.187}] = select(:foo)
-      assert [{_, 24.011}] = select(:bar)
+      assert [%Measurement{value: 23.187}] = select(:foo, 5)
+      assert [%Measurement{value: 24.011}] = select(:bar, 5)
     end
 
     test "logs malformed readings" do
@@ -32,8 +33,8 @@ defmodule Collector.ReaderTest do
                Process.whereis(Reader) |> Process.send(:read_all, [])
                assert_receive({:new_record, _})
 
-               assert [{_, 23.187}] = select(:foo)
-               assert [] = select(:bar)
+               assert [%Measurement{value: 23.187}] = select(:foo, 5)
+               assert [] = select(:bar, 5)
              end) =~ "bar read failed"
     end
 
@@ -45,8 +46,8 @@ defmodule Collector.ReaderTest do
                Process.whereis(Reader) |> Process.send(:read_all, [])
                assert_receive({:new_record, _})
 
-               assert [{_, 23.187}] = select(:foo)
-               assert [] = select(:bar)
+               assert [%Measurement{value: 23.187}] = select(:foo, 5),
+                      assert([] = select(:bar, 5))
              end) =~ "bar reported power-on reset value"
     end
   end

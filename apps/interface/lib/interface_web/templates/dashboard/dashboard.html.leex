@@ -1,26 +1,26 @@
-<%= if Enum.any?(@sensors) do %>
-  <h3>Sensors</h3>
-  <%= for {label, {{last_read_at, value}, eval, dataset, labels}} <- @sensors do %>
-    <h4><%= label %> <%= value %>°C at <%= last_read_at %> (expected: <%= eval || "none" %>)</h4>
-    <div id="<%= label %>"
-         data-label="<%= label %>"
-         data-labels="<%= Jason.encode!(labels) %>"
-         data-dataset="<%= Jason.encode!(dataset) %>"
-         data-current-label="<%= last_read_at %>"
-         data-current-value="<%= value %>"
+<%= if Enum.any?(@relays) do %>
+  <h3>Relays</h3>
+  <ul>
+    <%= for relay_state <- Enum.sort(@relays) do %>
+      <li><%= to_string(relay_state) %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<%= if Enum.any?(@data) do %>
+  <%= for {id, {newest, data}} <- @data do %>
+    <div id="<%= id %>"
+         data-chart-label="<%= to_string(newest) %>"
+         data-current-expected-value="<%= newest.expected_value %>"
+         data-current-label="<%= DateTime.to_time(newest.timestamp) %>"
+         data-current-value="<%= newest.value %>"
+         data-expected-values="<%= Jason.encode!(data[:expected_values]) %>"
+         data-labels="<%= Jason.encode!(data[:labels]) %>"
+         data-values="<%= Jason.encode!(data[:values]) %>"
          phx-hook="ChartHook">
       <div phx-update="ignore">
         <canvas class="chartContainer" />
       </div>
     </div>
   <% end %>
-<% end %>
-
-<%= if Enum.any?(@relays) do %>
-  <h3>Relays</h3>
-  <ul>
-    <%= for {id, {timestamp, value}} <- Enum.sort(@relays) do %>
-      <li><%= id %>: <%= value %> at <%= timestamp %></li>
-    <% end %>
-  </ul>
 <% end %>

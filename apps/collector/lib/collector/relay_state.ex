@@ -20,7 +20,15 @@ defmodule Collector.RelayState do
   @doc """
   Initializes struct for a given state. It assigns current timestamp if missing.
   """
-  @spec new(id, value, timestamp | nil) :: t
+  def new(id, val) do
+    timestamp = DateTime.utc_now() |> DateTime.truncate(:second)
+    new(id, val, timestamp)
+  end
+
+  @doc """
+  Initializes struct for a given state.
+  """
+  @spec new(id, value, timestamp) :: t
   def new(id, val, %DateTime{} = timestamp) when is_atom(id) and is_boolean(val) do
     %__MODULE__{
       id: id,
@@ -29,9 +37,10 @@ defmodule Collector.RelayState do
     }
   end
 
-  def new(id, val) when is_atom(id) and is_boolean(val) do
-    timestamp = DateTime.utc_now() |> DateTime.truncate(:second)
-    new(id, val, timestamp)
+  @spec new(id, value, unix_epoch :: pos_integer) :: t
+  def new(id, val, unix_epoch) when is_integer(unix_epoch) and unix_epoch > 0 do
+    at = DateTime.from_unix!(unix_epoch)
+    new(id, val, at)
   end
 end
 

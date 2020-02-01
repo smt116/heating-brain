@@ -35,22 +35,25 @@ defmodule Collector.Controller do
   @impl true
   @spec handle_info({:new_record, record}, state) :: {:noreply, state}
   def handle_info({:new_record, %Measurement{id: id} = measurement}, state) do
-    item = get_env(:collector, :sensors_map) |> Enum.find(&(elem(&1, 0) === id))
+    item = get_env(:collector, :sensors_map) |> Enum.find(&(elem(&1, 1) === id))
 
     new_state =
-      if is_nil(item) do
-        Logger.debug(fn -> "There is no mapping for #{id} sensor" end)
+      case item do
+        nil ->
+          Logger.debug(fn -> "There is no mapping for #{id} sensor" end)
+          state
 
-        state
-      else
-        {_, _, id, expected_value} = item
+        {_, _, nil, _} ->
+          Logger.debug(fn -> "There is no relay for #{id} sensor" end)
+          state
 
-        state
-        |> Keyword.put_new(id, {nil, nil})
-        |> Keyword.get_and_update(id, fn {_value, timer} = current ->
-          {current, {measurement.value < expected_value, timer}}
-        end)
-        |> schedule_relay_state_update(id)
+        {_, _, relay_id, expected_value} ->
+          state
+          |> Keyword.put_new(relay_id, {nil, nil})
+          |> Keyword.get_and_update(relay_id, fn {_value, timer} = current ->
+            {current, {measurement.value < expected_value, timer}}
+          end)
+          |> schedule_relay_state_update(relay_id)
       end
 
     {:noreply, new_state}
@@ -97,8 +100,8 @@ defmodule Collector.Controller do
       state
     else
       Logger.debug(fn ->
-        "Relay state for #{id} is going to change from #{previous_value}" <>
-          " to #{new_value}"
+        "Relay state for #{id} is going to change" <>
+          " from #{previous_value || "none"} to #{new_value}"
       end)
 
       cancel_timer(timer)

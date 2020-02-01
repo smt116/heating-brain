@@ -9,6 +9,8 @@ defmodule Collector.Storage do
 
   require Logger
 
+  import DateTime, only: [to_unix: 1]
+
   alias :mnesia, as: Mnesia
   alias Collector.Measurement
   alias Collector.RelayState
@@ -57,8 +59,8 @@ defmodule Collector.Storage do
     Mnesia.create_schema([node()])
 
     :ok = Mnesia.start()
-    :ok = initialize_table(Measurement, [:reading, :unix])
-    :ok = initialize_table(RelayState, [:state, :unix])
+    :ok = initialize_table(Measurement, [:point, :value, :expected_value])
+    :ok = initialize_table(RelayState, [:point, :state])
     :ok = Mnesia.wait_for_tables([Measurement, RelayState], 60_000)
 
     Enum.each([Measurement, RelayState], fn table ->
@@ -129,7 +131,7 @@ defmodule Collector.Storage do
   @spec handle_info(mnesia_table_event, state) :: {:noreply, state}
   def handle_info({:mnesia_table_event, event}, subscribers) do
     case event do
-      {:write, {Measurement, _, _} = measurement, _} ->
+      {:write, {Measurement, _, _, _} = measurement, _} ->
         measurement |> to_struct() |> publish()
 
       {:write, {RelayState, _, _} = relay_state, _} ->
@@ -150,53 +152,80 @@ defmodule Collector.Storage do
     GenServer.start_link(__MODULE__, state, name: __MODULE__)
   end
 
-  @spec select(atom, atom, timestamp) :: list({timestamp, term})
-  def select(table, id, %DateTime{} = dt) when is_atom(table) and is_atom(id) do
-    fn ->
-      unix = DateTime.to_unix(dt)
-
-      Mnesia.select(
-        table,
-        [
-          {
-            {table, {:"$1", :"$2"}, :"$3"},
-            [
-              {:==, :"$1", id},
-              {:>, :"$2", unix}
-            ],
-            [
-              [:"$2", :"$3"]
-            ]
-          }
-        ]
-      )
-    end
-    |> Mnesia.transaction()
-    |> handle_select(table, id)
-  end
-
-  @spec select_all(atom, timestamp) :: list({atom, list({timestamp, term})})
-  def select_all(table, %DateTime{} = dt) when is_atom(table) do
-    fn ->
-      unix = DateTime.to_unix(dt)
-
-      Mnesia.select(
-        table,
-        [
-          {
-            {table, {:"$1", :"$2"}, :"$3"},
-            [
-              {:>, :"$2", unix}
-            ],
-            [
-              [:"$$"]
-            ]
-          }
-        ]
-      )
-    end
+  @spec select(atom, tuple) :: list({atom, list(term)})
+  def select(table, query) when is_atom(table) and is_tuple(query) do
+    fn -> Mnesia.select(table, [query]) end
     |> Mnesia.transaction()
     |> handle_select(table)
+  end
+
+  @spec select(Measurement, timestamp) :: list({Measurement.id(), list(measurement)})
+  def select(Measurement, %DateTime{} = dt) do
+    select(Measurement, {
+      {Measurement, {:"$1", :"$2"}, :"$3", :"$4"},
+      [
+        {:>, :"$2", to_unix(dt)}
+      ],
+      [
+        [:"$1", :"$3", :"$4", :"$2"]
+      ]
+    })
+  end
+
+  @spec select(RelayState, timestamp) :: list({RelayState.id(), list(relay_state)})
+  def select(RelayState, %DateTime{} = dt) do
+    select(RelayState, {
+      {RelayState, {:"$1", :"$2"}, :"$3"},
+      [
+        {:>, :"$2", to_unix(dt)}
+      ],
+      [
+        [:"$1", :"$3", :"$2"]
+      ]
+    })
+  end
+
+  @spec select(table, tuple, atom) :: list(term)
+  def select(t, query, id) when is_atom(t) and is_atom(id) and is_tuple(query) do
+    fn -> Mnesia.select(t, [query]) end
+    |> Mnesia.transaction()
+    |> handle_select(t, id)
+  end
+
+  @spec select(Measurement, Measurement.id(), timestamp) :: list(measurement)
+  def select(Measurement, id, %DateTime{} = dt) when is_atom(id) do
+    select(
+      Measurement,
+      {
+        {Measurement, {:"$1", :"$2"}, :"$3", :"$4"},
+        [
+          {:==, :"$1", id},
+          {:>, :"$2", to_unix(dt)}
+        ],
+        [
+          [:"$1", :"$3", :"$4", :"$2"]
+        ]
+      },
+      id
+    )
+  end
+
+  @spec select(RelayState, RelayState.id(), timestamp) :: list(relay_state)
+  def select(RelayState, id, %DateTime{} = dt) when is_atom(id) do
+    select(
+      RelayState,
+      {
+        {RelayState, {:"$1", :"$2"}, :"$3"},
+        [
+          {:==, :"$1", id},
+          {:>, :"$2", to_unix(dt)}
+        ],
+        [
+          [:"$1", :"$3", :"$2"]
+        ]
+      },
+      id
+    )
   end
 
   @doc """
@@ -230,16 +259,19 @@ defmodule Collector.Storage do
     |> handle_write_result(struct)
   end
 
-  defp from_struct(%{id: id, value: value, timestamp: timestamp} = r) do
-    {r.__struct__, {id, DateTime.to_unix(timestamp)}, value}
+  defp from_struct(%Measurement{} = r) do
+    {Measurement, {r.id, to_unix(r.timestamp)}, r.value, r.expected_value}
   end
 
-  defp handle_select({:atomic, r}, _table) when is_list(r) do
+  defp from_struct(%RelayState{} = r) do
+    {RelayState, {r.id, to_unix(r.timestamp)}, r.value}
+  end
+
+  defp handle_select({:atomic, r}, table) when is_list(r) do
     r
-    |> Enum.group_by(fn [[id, _unix, _value]] -> id end, fn [[_id, unix, value]] ->
-      {DateTime.from_unix!(unix), value}
-    end)
-    |> Stream.map(fn {id, readings} -> {id, Enum.sort(readings)} end)
+    |> Stream.map(&apply(table, :new, &1))
+    |> Enum.group_by(& &1.id)
+    |> Stream.map(fn {id, list} -> {id, Enum.sort_by(list, & &1.timestamp)} end)
     |> Enum.sort()
   end
 
@@ -251,10 +283,8 @@ defmodule Collector.Storage do
     {:error, reason}
   end
 
-  defp handle_select({:atomic, r}, _table, _id) when is_list(r) do
-    r
-    |> Enum.sort_by(fn [unix, _value] -> unix end)
-    |> Enum.map(fn [unix, value] -> {DateTime.from_unix!(unix), value} end)
+  defp handle_select({:atomic, r}, table, id) when is_list(r) do
+    handle_select({:atomic, r}, table) |> Keyword.get(id, [])
   end
 
   defp handle_select({:aborted, reason}, table, id) do
@@ -268,7 +298,7 @@ defmodule Collector.Storage do
   defp handle_write_result({:atomic, :ok}, _struct), do: :ok
 
   defp handle_write_result({:aborted, reason}, struct) do
-    Logger.error(fn -> "Writing #{struct} failed: #{reason}" end)
+    Logger.error(fn -> "Writing #{inspect(struct)} failed: #{reason}" end)
 
     {:error, reason}
   end
@@ -301,8 +331,11 @@ defmodule Collector.Storage do
 
   defp publish(record), do: GenServer.cast(__MODULE__, {:publish, record})
 
-  defp to_struct({struct, {id, unix}, value}) do
-    {:ok, timestamp} = DateTime.from_unix(unix)
-    struct.new(id, value, timestamp)
+  defp to_struct({Measurement, {id, unix_epoch}, val, eval}) do
+    Measurement.new(id, val, eval, unix_epoch)
+  end
+
+  defp to_struct({RelayState, {id, unix_epoch}, value}) do
+    RelayState.new(id, value, unix_epoch)
   end
 end

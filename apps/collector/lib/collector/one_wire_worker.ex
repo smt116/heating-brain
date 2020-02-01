@@ -8,11 +8,12 @@ defmodule Collector.OneWireWorker do
 
   use GenServer
 
+  alias Collector.Measurement
   alias Collector.OneWire
 
   @opaque state :: [last_read_at: pos_integer]
+  @type id :: Measurement.id()
   @typep from :: GenServer.from()
-  @type id :: Collector.Measurement.id()
 
   @delay_between_readings Application.get_env(:collector, :w1_bus_delay_between_readings)
 

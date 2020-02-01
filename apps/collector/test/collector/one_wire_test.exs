@@ -6,6 +6,13 @@ defmodule Collector.OneWireTest do
   alias Collector.Measurement
 
   describe "sensors/0" do
+    test "converts id into the label when set in config" do
+      FilesystemMock.set_sensor(:"28-01187615e4ff", 11.3)
+      FilesystemMock.set_sensor(:unknown, 14.5)
+
+      assert sensors() === [:living_room, :unknown]
+    end
+
     property "returns a list of available sensors" do
       check all tuples <- list_of(tuple({Generators.id(), Generators.temp()})) do
         tuples
@@ -43,6 +50,8 @@ defmodule Collector.OneWireTest do
                 }} = read(measurement.id)
 
         assert Float.round(actual_value, 1) === Float.round(value, 1)
+
+        FilesystemMock.reset()
       end
     end
 

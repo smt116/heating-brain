@@ -8,9 +8,7 @@ defmodule Collector.RelaysTest do
       put_state: 1,
       read_all: 0,
       select: 1,
-      select: 2,
-      select_all: 0,
-      select_all: 1
+      select: 2
     ]
 
   import Collector.Storage, only: [write: 1]
@@ -78,57 +76,6 @@ defmodule Collector.RelaysTest do
   end
 
   describe "select/1" do
-    test "fetches states for a given relay" do
-      now = DateTime.utc_now() |> DateTime.truncate(:second)
-      before = DateTime.add(now, -5, :second)
-      obsolete = DateTime.add(now, -301, :second)
-
-      new(:valve1, false) |> Map.put(:timestamp, now) |> write()
-      new(:valve1, true) |> Map.put(:timestamp, before) |> write()
-      new(:valve1, false) |> Map.put(:timestamp, obsolete) |> write()
-
-      assert [
-               {^before, true},
-               {^now, false}
-             ] = select(:valve1)
-    end
-  end
-
-  describe "select/2" do
-    test "fetches states within time boundary for a given relay" do
-      now = DateTime.utc_now() |> DateTime.truncate(:second)
-      before = DateTime.add(now, -5, :second)
-
-      new(:valve2, false) |> Map.put(:timestamp, now) |> write()
-      new(:valve2, true) |> Map.put(:timestamp, before) |> write()
-
-      assert [{^now, false}] = select(:valve2, 5)
-
-      assert [
-               {^before, true},
-               {^now, false}
-             ] = select(:valve2, 6)
-    end
-  end
-
-  describe "select_all/0" do
-    test "fetches states for all relays" do
-      now = DateTime.utc_now() |> DateTime.truncate(:second)
-      before = DateTime.add(now, -5, :second)
-      obsolete = DateTime.add(now, -301, :second)
-
-      new(:valve1, false) |> Map.put(:timestamp, now) |> write()
-      new(:heating, true) |> Map.put(:timestamp, before) |> write()
-      new(:heating, false) |> Map.put(:timestamp, obsolete) |> write()
-
-      assert [
-               heating: [{^before, true}],
-               valve1: [{^now, false}]
-             ] = select_all()
-    end
-  end
-
-  describe "select_all/1" do
     test "fetches states within time boundary for all relays" do
       now = DateTime.utc_now() |> DateTime.truncate(:second)
       before = DateTime.add(now, -5, :second)
@@ -140,11 +87,41 @@ defmodule Collector.RelaysTest do
 
       assert [
                heating: [
-                 {^obsolete, false},
-                 {^before, true}
+                 %RelayState{id: :heating, value: true, timestamp: ^before}
                ],
-               valve1: [{^now, false}]
-             ] = select_all(310)
+               valve1: [
+                 %RelayState{id: :valve1, value: false, timestamp: ^now}
+               ]
+             ] = select(300)
+
+      assert [
+               heating: [
+                 %RelayState{id: :heating, value: false, timestamp: ^obsolete},
+                 %RelayState{id: :heating, value: true, timestamp: ^before}
+               ],
+               valve1: [
+                 %RelayState{id: :valve1, value: false, timestamp: ^now}
+               ]
+             ] = select(310)
+    end
+  end
+
+  describe "select/2" do
+    test "fetches states within time boundary for a given relay" do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      before = DateTime.add(now, -5, :second)
+
+      new(:valve2, false) |> Map.put(:timestamp, now) |> write()
+      new(:valve2, true) |> Map.put(:timestamp, before) |> write()
+
+      assert [
+               %RelayState{id: :valve2, value: false, timestamp: ^now}
+             ] = select(:valve2, 5)
+
+      assert [
+               %RelayState{id: :valve2, value: true, timestamp: ^before},
+               %RelayState{id: :valve2, value: false, timestamp: ^now}
+             ] = select(:valve2, 6)
     end
   end
 
