@@ -4,6 +4,7 @@ defmodule Collector.Measurement do
   """
 
   @enforce_keys [:id, :value, :timestamp]
+  @derive Jason.Encoder
   defstruct [:id, :value, :expected_value, :timestamp]
 
   @type id :: atom

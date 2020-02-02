@@ -5,6 +5,7 @@ defmodule Collector.Sensors do
   """
 
   alias Collector.Measurement
+  alias Collector.RelayState
   alias Collector.Storage
 
   @type id :: Measurement.id()
@@ -34,6 +35,20 @@ defmodule Collector.Sensors do
 
   def select(%DateTime{} = since) do
     Storage.select(Measurement, since)
+  end
+
+  @spec to_relay_id(id) :: RelayState.id() | nil
+  def to_relay_id(id) do
+    Application.get_env(:collector, :sensors_map)
+    |> Enum.find({nil, nil, nil}, &(elem(&1, 1) === id))
+    |> elem(2)
+  end
+
+  @spec to_sensor_id(id) :: Measurement.id()
+  def to_sensor_id(id) do
+    Application.get_env(:collector, :sensors_map)
+    |> Enum.find(&(elem(&1, 2) === id))
+    |> elem(1)
   end
 
   defp to_datetime(seconds) when is_integer(seconds) and seconds > 0 do

@@ -4,6 +4,7 @@ defmodule Collector.RelayState do
   """
 
   @enforce_keys [:id, :value, :timestamp]
+  @derive Jason.Encoder
   defstruct [:id, :value, :timestamp]
 
   @type id :: atom

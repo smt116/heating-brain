@@ -3,11 +3,9 @@ defmodule InterfaceWeb.DashboardLive do
 
   use Phoenix.LiveView
 
-  import DateTime, only: [to_time: 1]
-
   import Interface,
     only: [
-      relays_states: 1,
+      relay_id_to_sensor_id: 1,
       sensors_chart_data: 0,
       subscribe_to_storage: 0
     ]
@@ -17,12 +15,8 @@ defmodule InterfaceWeb.DashboardLive do
 
   def mount(_params, _session, socket) do
     :ok = subscribe_to_storage()
-    relays = Enum.map(relays_states(60), fn {_, list} -> Enum.fetch!(list, -1) end)
 
-    socket =
-      socket
-      |> assign(:data, sensors_chart_data())
-      |> assign(:relays, relays)
+    socket = assign(socket, :data, sensors_chart_data())
 
     {:ok, socket}
   end
@@ -34,14 +28,21 @@ defmodule InterfaceWeb.DashboardLive do
   def handle_info({:new_record, %Measurement{} = m}, socket) do
     socket =
       update(socket, :data, fn sensors ->
-        Keyword.update!(sensors, m.id, fn {_, data} -> {m, data} end)
+        Keyword.update!(sensors, m.id, fn {_, r, data} ->
+          {m, %{r | timestamp: m.timestamp}, data}
+        end)
       end)
 
     {:noreply, socket}
   end
 
   def handle_info({:new_record, %RelayState{} = r}, socket) do
-    {:noreply, update(socket, :relays, &Keyword.put(&1, r.id, {r.timestamp, r.value}))}
+    socket =
+      update(socket, :data, fn sensors ->
+        m_id = relay_id_to_sensor_id(r.id)
+        Keyword.update!(sensors, m_id, fn {m, _, data} -> {m, r, data} end)
+      end)
+
     {:noreply, socket}
   end
 end

@@ -14,8 +14,10 @@ defmodule Collector do
   defdelegate relays_states(within), to: Relays, as: :select
   defdelegate relays_states(id, within), to: Relays, as: :select
 
-  defdelegate sensors_readings(within), to: Sensors, as: :select
+  defdelegate relay_id_to_sensor_id(id), to: Sensors, as: :to_sensor_id
+  defdelegate sensor_id_to_relay_id(id), to: Sensors, as: :to_relay_id
   defdelegate sensors_readings(id, within), to: Sensors, as: :select
+  defdelegate sensors_readings(within), to: Sensors, as: :select
 
   defdelegate subscribe, to: Storage
   defdelegate unsubscribe(pid), to: Storage
