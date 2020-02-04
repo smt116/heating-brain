@@ -38,8 +38,9 @@ defmodule Collector.OneWireWorkerTest do
                timestamp: _,
                value: 24.011
              },
-             error: "bar reported power-on reset value",
-             error: "foo read failed: \"60 01 4b 14 : crc=14 NO\\n7f ff 0c 10 14 t=24011\\n\""
+             error: "bar sensor reported power-on reset value",
+             error:
+               "foo sensor read failed: \"60 01 4b 14 : crc=14 NO\\n7f ff 0c 10 14 t=24011\\n\""
            ] = read_all()
   end
 end

@@ -60,14 +60,14 @@ defmodule Collector.OneWireTest do
 
       assert read(:foo) ===
                {:error,
-                "foo read failed: \"60 01 4b 14 : crc=14 NO\\n" <>
+                "foo sensor read failed: \"60 01 4b 14 : crc=14 NO\\n" <>
                   "7f ff 0c 10 14 t=24011\\n\""}
     end
 
     test "does not include readings with power-on reset value" do
       FilesystemMock.set_sensor(:foo, 85.0)
 
-      assert read(:foo) === {:error, "foo reported power-on reset value"}
+      assert read(:foo) === {:error, "foo sensor reported power-on reset value"}
     end
   end
 end

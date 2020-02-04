@@ -35,7 +35,7 @@ defmodule Collector.ReaderTest do
 
                assert [%Measurement{value: 23.187}] = select(:foo, 5)
                assert [] = select(:bar, 5)
-             end) =~ "bar read failed"
+             end) =~ "bar sensor read failed"
     end
 
     test "logs failed readings due to the power-on reset value" do
@@ -48,7 +48,7 @@ defmodule Collector.ReaderTest do
 
                assert [%Measurement{value: 23.187}] = select(:foo, 5),
                       assert([] = select(:bar, 5))
-             end) =~ "bar reported power-on reset value"
+             end) =~ "bar sensor reported power-on reset value"
     end
   end
 end

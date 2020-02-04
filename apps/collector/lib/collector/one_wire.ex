@@ -49,7 +49,7 @@ defmodule Collector.OneWire do
       }}
 
       iex> Collector.OneWire.read(:bar)
-      {:error, "bar reported power-on reset value"}
+      {:error, "bar sensor reported power-on reset value"}
 
   """
   @spec read(label) :: read
@@ -82,18 +82,24 @@ defmodule Collector.OneWire do
       |> Map.fetch!("temperature")
       |> handle_raw_temperature(id)
     else
-      {:error, "#{id} read failed: #{inspect(output)}"}
+      {:error, "#{id} sensor read failed: #{inspect(output)}"}
     end
   end
 
   defp handle_raw_temperature("85000", id) do
-    {:error, "#{id} reported power-on reset value"}
+    {:error, "#{id} sensor reported power-on reset value"}
   end
 
   defp handle_raw_temperature(raw_temperature, id) do
     case Integer.parse(raw_temperature) do
-      {value, ""} -> {:ok, value / 1000}
-      :error -> {:error, "#{id} reported unparseable value: #{raw_temperature}"}
+      {value, ""} ->
+        {:ok, value / 1000}
+
+      :error ->
+        {
+          :error,
+          "#{id} sensor reported unparseable value: #{raw_temperature}"
+        }
     end
   end
 
