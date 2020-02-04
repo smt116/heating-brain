@@ -11,7 +11,7 @@ ExecStart=/usr/bin/sudo /opt/heating_brain/_build/prod/rel/heating_brain/bin/hea
 ExecStop=/usr/bin/sudo /bin/kill -SIGTERM $MAINPID
 
 Restart=always
-RestartSec=30s
+RestartSec=60s
 TimeoutStopSec=30s
 
 OOMScoreAdjust=500
