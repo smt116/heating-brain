@@ -40,7 +40,7 @@ defmodule Interface do
       datasets =
         measurements
         |> sensor_chart_data()
-        |> with_states_data(states)
+        |> Keyword.merge(states: states_data(states))
         |> Stream.map(fn {k, v} -> {k, Enum.sort_by(v, & &1.x)} end)
         |> Enum.into(%{})
 
@@ -61,18 +61,13 @@ defmodule Interface do
     end)
   end
 
-  defp with_states_data(data, states) do
-    states =
-      Enum.reduce(data[:values], [], fn %{x: timestamp}, acc ->
-        relevant_state = Enum.find(states, &(timestamp >= &1.timestamp))
-
-        if is_nil(relevant_state) do
-          acc
-        else
-          [%{x: timestamp, y: relevant_state.value} | acc]
-        end
-      end)
-
-    Keyword.merge(data, states: states)
+  defp states_data(states) do
+    Enum.map(
+      states,
+      &%{
+        x: &1.timestamp,
+        y: if(&1.value === true, do: 1, else: 0)
+      }
+    )
   end
 end

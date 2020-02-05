@@ -45,10 +45,10 @@ Hooks.ChartHook = {
           data: data.states,
           fill: true,
           label: "Ogrzewanie",
-          lineTension: 0,
           pointHoverRadius: 2,
-          pointRadius: 1,
           spanGaps: true,
+          pointRadius: 1,
+          steppedLine: "before",
           type: "line",
           yAxisID: "state",
         }],
@@ -78,7 +78,11 @@ Hooks.ChartHook = {
             display: false,
             scaleLabel: {
               display: false,
-              labelString: "Ogrzwanie"
+              labelString: "Ogrzwanie",
+            },
+            ticks: {
+              min: 0,
+              max: 1,
             }
           }]
         },
@@ -118,6 +122,16 @@ Hooks.ChartHook = {
         chart.data.datasets[2].data.push({
           x: state.timestamp,
           y: state.value ? 1 : 0
+        })
+      } else {
+        // Make sure that the line does not end in the middle of the chart if the
+        // relay was not updated for a while.
+        const data = chart.data.datasets[2].data
+        const state = data[data.length - 1]
+
+        chart.data.datasets[2].data.push({
+          ...state,
+          x: measurement.timestamp,
         })
       }
     }

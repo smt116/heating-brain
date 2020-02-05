@@ -30,7 +30,7 @@ defmodule InterfaceWeb.DashboardLive do
       update(socket, :data, fn sensors ->
         Keyword.update!(sensors, m.id, fn
           {_, nil, data} -> {m, nil, data}
-          {_, r, data} -> {m, %{r | timestamp: m.timestamp}, data}
+          {_, r, data} -> {m, r, data}
         end)
       end)
 
@@ -41,6 +41,7 @@ defmodule InterfaceWeb.DashboardLive do
     socket =
       update(socket, :data, fn sensors ->
         m_id = relay_id_to_sensor_id(r.id)
+
         if is_atom(m_id) do
           Keyword.update!(sensors, m_id, fn {m, _, data} -> {m, r, data} end)
         else
