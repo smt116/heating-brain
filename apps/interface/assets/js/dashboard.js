@@ -1,13 +1,13 @@
 import {Socket} from "phoenix"
 import LiveSocket from "phoenix_live_view"
 import Chart from "chart.js"
-import colors from "./colors.js"
 
 document.charts = {}
 let Hooks = {}
 
-const expectedValuesBackgroundColor = "rgba(255, 220,0, 0.5)"
-const stateBackgroundColor = "rgba(1, 255, 112, 0.25)"
+const valueColor = "#85144B"
+const expectedValuesColor = "rgba(255, 220,0, 0.5)"
+const stateColor = "rgba(1, 255, 112, 0.25)"
 
 Hooks.ChartHook = {
   mounted() {
@@ -18,8 +18,8 @@ Hooks.ChartHook = {
     document.charts[this.el.id] = new Chart(chart, {
       data: {
         datasets: [{
-          backgroundColor: colors[this.el.id],
-          borderColor: colors[this.el.id],
+          backgroundColor: valueColor,
+          borderColor: valueColor,
           data: data.values,
           fill: false,
           label: "Temperatura",
@@ -29,8 +29,8 @@ Hooks.ChartHook = {
           type: "line",
           yAxisID: "temp",
         }, {
-          backgroundColor: expectedValuesBackgroundColor,
-          borderColor: expectedValuesBackgroundColor,
+          backgroundColor: expectedValuesColor,
+          borderColor: expectedValuesColor,
           data: data.expected_values,
           fill: false,
           label: "Oczekiawana temperatura",
@@ -40,8 +40,8 @@ Hooks.ChartHook = {
           type: "line",
           yAxisID: "temp",
         }, {
-          backgroundColor: stateBackgroundColor,
-          borderColor: stateBackgroundColor,
+          backgroundColor: stateColor,
+          borderColor: stateColor,
           data: data.states,
           fill: true,
           label: "Ogrzewanie",
