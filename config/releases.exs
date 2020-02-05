@@ -19,7 +19,7 @@ config :collector,
   sensors_map: [
     {:"28-0118761492ff", :bathroom, :valve3, 22.0},
     {:"28-01187615e4ff", :living_room, :valve1, 21.5},
-    {:"28-0118761f69ff", :pipe, nil, nil},
+    {:"28-0118761f69ff", :pipe_in, nil, nil},
     {:"28-011876205aff", :office, :valve2, 22.5},
     {:"28-011876213eff", :bedroom, :valve4, 20.0},
     {:"28-0118765246ff", :room, :valve5, 19.5},
