@@ -111,13 +111,15 @@ Hooks.ChartHook = {
     }
 
     const state = JSON.parse(this.el.dataset.currentState)
-    const stateDuplication = chart.data.datasets[2].data.find(p => p.x === state.timestamp)
+    if (state !== null) {
+      const stateDuplication = chart.data.datasets[2].data.find(p => p.x === state.timestamp)
 
-    if(stateDuplication === undefined) {
-      chart.data.datasets[2].data.push({
-        x: state.timestamp,
-        y: state.value ? 1 : 0
-      })
+      if(stateDuplication === undefined) {
+        chart.data.datasets[2].data.push({
+          x: state.timestamp,
+          y: state.value ? 1 : 0
+        })
+      }
     }
 
     chart.update()

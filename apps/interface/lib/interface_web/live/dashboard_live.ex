@@ -28,8 +28,9 @@ defmodule InterfaceWeb.DashboardLive do
   def handle_info({:new_record, %Measurement{} = m}, socket) do
     socket =
       update(socket, :data, fn sensors ->
-        Keyword.update!(sensors, m.id, fn {_, r, data} ->
-          {m, %{r | timestamp: m.timestamp}, data}
+        Keyword.update!(sensors, m.id, fn
+          {_, nil, data} -> {m, nil, data}
+          {_, r, data} -> {m, %{r | timestamp: m.timestamp}, data}
         end)
       end)
 
@@ -40,7 +41,11 @@ defmodule InterfaceWeb.DashboardLive do
     socket =
       update(socket, :data, fn sensors ->
         m_id = relay_id_to_sensor_id(r.id)
-        Keyword.update!(sensors, m_id, fn {m, _, data} -> {m, r, data} end)
+        if is_atom(m_id) do
+          Keyword.update!(sensors, m_id, fn {m, _, data} -> {m, r, data} end)
+        else
+          sensors
+        end
       end)
 
     {:noreply, socket}

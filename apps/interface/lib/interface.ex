@@ -35,7 +35,7 @@ defmodule Interface do
     |> Enum.map(fn {id, measurements} ->
       states = Keyword.get(relays_states_data, sensor_id_to_relay_id(id), [])
       current_measurement = Enum.fetch!(measurements, -1)
-      current_state = Enum.fetch!(states, -1)
+      current_state = Enum.at(states, -1)
 
       datasets =
         measurements
