@@ -41,6 +41,7 @@ defmodule Interface do
         measurements
         |> sensor_chart_data()
         |> with_states_data(states)
+        |> Stream.map(fn {k, v} -> {k, Enum.sort_by(v, & &1.x)} end)
         |> Enum.into(%{})
 
       {id, {current_measurement, current_state, datasets}}
