@@ -25,12 +25,23 @@ defmodule InterfaceWeb.DashboardLive do
     Phoenix.View.render(InterfaceWeb.DashboardView, "dashboard.html", assigns)
   end
 
+  def handle_info({:new_record, %Measurement{id: :pipe_in} = pi}, socket) do
+    socket =
+      update(socket, :data, fn sensors ->
+        Enum.map(sensors, fn {id, {m, _, r, data}} ->
+          {id, {m, pi, r, data}}
+        end)
+      end)
+
+    {:noreply, socket}
+  end
+
   def handle_info({:new_record, %Measurement{} = m}, socket) do
     socket =
       update(socket, :data, fn sensors ->
         Keyword.update!(sensors, m.id, fn
-          {_, nil, data} -> {m, nil, data}
-          {_, r, data} -> {m, r, data}
+          {_, pi, nil, data} -> {m, pi, nil, data}
+          {_, pi, r, data} -> {m, pi, r, data}
         end)
       end)
 

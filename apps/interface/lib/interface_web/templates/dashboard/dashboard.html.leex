@@ -1,8 +1,9 @@
 <%= if Enum.any?(@data) do %>
-  <%= for {id, {measurement, state, data}} <- @data do %>
+  <%= for {id, {measurement, pipe_in, state, data}} <- @data do %>
     <div id="<%= id %>"
          data-chart-label="<%= to_string(measurement) %>"
          data-current-measurement="<%= Jason.encode!(measurement) %>"
+         data-current-pipe-in="<%= Jason.encode!(pipe_in) %>"
          data-current-state="<%= Jason.encode!(state) %>"
          data-data="<%= Jason.encode!(data) %>"
          phx-hook="ChartHook">
