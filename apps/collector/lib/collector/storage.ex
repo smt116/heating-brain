@@ -48,7 +48,6 @@ defmodule Collector.Storage do
 
   @opaque state :: list({pid, reference})
 
-  @backups_directory Application.get_env(:mnesia, :backups_directory)
   @tables_storage Application.get_env(:mnesia, :tables_storage)
 
   @impl true
@@ -150,12 +149,15 @@ defmodule Collector.Storage do
 
   @spec create_backup :: :ok
   def create_backup do
+    backups_directory = Application.get_env(:mnesia, :backups_directory)
+
     timestamp =
       DateTime.utc_now()
       |> DateTime.truncate(:second)
       |> DateTime.to_iso8601(:basic)
+
     filename = Enum.join(["mnesia", node() |> to_string(), timestamp], ".")
-    path = Path.join([@backups_directory, filename])
+    path = Path.join([backups_directory, filename])
 
     :ok = path |> to_charlist() |> :mnesia.backup()
   end
