@@ -1,14 +1,15 @@
 [Unit]
 Description=Heating Brain Application
-After=network.target
+After=local-fs.target network.target
 
 [Service]
 Type=simple
 WorkingDirectory=/opt/heating_brain
+Environment="HOME=/opt/heating_brain"
 Environment="MIX_ENV=prod"
 
-ExecStart=/usr/bin/sudo /opt/heating_brain/_build/prod/rel/heating_brain/bin/heating_brain start
-ExecStop=/usr/bin/sudo /bin/kill -SIGTERM $MAINPID
+ExecStart=/opt/heating_brain/_build/prod/rel/heating_brain/bin/heating_brain start
+ExecStop=/opt/heating_brain/_build/prod/rel/heating_brain/bin/heating_brain stop
 
 Restart=always
 RestartSec=60s

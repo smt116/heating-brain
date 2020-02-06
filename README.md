@@ -118,11 +118,20 @@
       endscript
     ```
 
-1. Application directories:
+1. Create application directories:
 
     ```
     mkdir -p /srv/backups /opt/heating_brain
     chown pi:pi /opt/heating_brain/ /srv/backups/
+    ```
+
+1. Configure backups:
+
+    ```
+    # Add in crontab:
+
+    0 * * * * /opt/heating_brain/_build/prod/rel/heating_brain/bin/heating_brain rpc ':ok = Collector.Storage.create_backup()'
+    15 10 * * * find /srv/backups -type f -mtime +14 -ls -exec rm -f -- {} \;
     ```
 
 ### From host system after setting up the server:

@@ -27,5 +27,6 @@ config :collector,
   ]
 
 config :mnesia,
+  backups_directory: "/srv/backups",
   dir: 'mnesia',
   tables_storage: :disc_copies

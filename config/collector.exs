@@ -28,6 +28,7 @@ config :collector,
   w1_bus_master1_path: "/sys/bus/w1/devices/w1_bus_master1"
 
 config :mnesia,
+  backups_directory: "/tmp/mnesia_backups",
   dir: 'mnesia/#{Mix.env()}-#{node()}',
   tables_storage: :disc_copies
 
