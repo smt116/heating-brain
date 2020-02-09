@@ -8,6 +8,8 @@ defmodule Collector.OneWireWorker do
 
   use GenServer
 
+  import Application, only: [compile_env: 2, get_env: 2]
+
   alias Collector.Measurement
   alias Collector.OneWire
 
@@ -15,7 +17,8 @@ defmodule Collector.OneWireWorker do
   @type id :: Measurement.id()
   @typep from :: GenServer.from()
 
-  @delay_between_readings Application.get_env(:collector, :w1_bus_delay_between_readings)
+  @delay_between_readings_on_timeout 10_000
+  @read_timeout compile_env(:collector, :w1_bus_read_timeout)
 
   @impl true
   @spec init(state) :: {:ok, state}
@@ -26,18 +29,25 @@ defmodule Collector.OneWireWorker do
     GenServer.start_link(__MODULE__, [last_read_at: 0], name: __MODULE__)
   end
 
-  defp now_in_millisecond, do: DateTime.utc_now() |> DateTime.to_unix(:millisecond)
+  defp now, do: DateTime.utc_now() |> DateTime.to_unix(:millisecond)
 
   @impl true
   @spec handle_call({:read, id}, from, state) :: {:reply, OneWire.read(), state}
   def handle_call({:read, id}, _pid, last_read_at: last_read_at) do
-    delay = last_read_at + @delay_between_readings - now_in_millisecond()
+    delay_between_readings = get_env(:collector, :w1_bus_delay_between_readings)
+    delay = last_read_at + delay_between_readings - now()
+    if delay > 0, do: :timer.sleep(delay)
 
-    if delay > 0 do
-      :timer.sleep(delay)
-    end
+    {result, new_last_read_at} =
+      try do
+        {Task.async(fn -> OneWire.read(id) end) |> Task.await(5_000), now()}
+      catch
+        :exit, {:timeout, _} ->
+          delay = @delay_between_readings_on_timeout
+          {{:error, "1-wire did not responded for #{id} sensor"}, now() + delay}
+      end
 
-    {:reply, OneWire.read(id), [last_read_at: now_in_millisecond()]}
+    {:reply, result, [last_read_at: new_last_read_at]}
   end
 
   @doc """
@@ -88,7 +98,7 @@ defmodule Collector.OneWireWorker do
 
   """
   @spec read(id) :: OneWire.read()
-  def read(id), do: GenServer.call(__MODULE__, {:read, id})
+  def read(id), do: GenServer.call(__MODULE__, {:read, id}, @read_timeout)
 
   defp by({:ok, %{id: id}}), do: {0, id}
   defp by(result), do: {1, result}

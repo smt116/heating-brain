@@ -3,15 +3,16 @@ defmodule Collector.OneWire do
   Core logic for handling sensors connected via the 1-wire bus.
   """
 
+  import Application, only: [compile_env: 2, get_env: 2]
+
   alias Collector.Measurement
+
+  @w1_bus_master1_path compile_env(:collector, :w1_bus_master1_path)
 
   @opaque raw_id :: atom
   @type error :: String.t()
   @type label :: Measurement.id()
   @type read :: {:ok, Measurement.t()} | {:error, error}
-
-  @handler Application.get_env(:collector, :filesystem_handler)
-  @w1_bus_master1_path Application.get_env(:collector, :w1_bus_master1_path)
 
   @doc """
   Returns a list of all available sensors. It uses the special file from the 1-wire
@@ -30,7 +31,7 @@ defmodule Collector.OneWire do
   def sensors do
     @w1_bus_master1_path
     |> Path.join("w1_master_slaves")
-    |> @handler.read!()
+    |> get_env(:collector, :filesystem_handler).read!()
     |> String.split()
     |> Stream.map(&String.to_atom/1)
     |> Stream.map(&to_label/1)
@@ -58,7 +59,7 @@ defmodule Collector.OneWire do
 
     id
     |> sensor_output_path()
-    |> @handler.read!()
+    |> get_env(:collector, :filesystem_handler).read!()
     |> extract_temperature(label)
     |> handle_result(id)
   end

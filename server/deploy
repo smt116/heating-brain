@@ -29,6 +29,9 @@ run "cd -"
 label "Logging deployment"
 run "ssh brain \"logger 'Deploying the Heating Brain application'\""
 
+label "Backing up database"
+run "ssh brain \"/opt/heating_brain/_build/prod/rel/heating_brain/bin/heating_brain --no-validate-compile-env rpc ':ok = Collector.Storage.create_backup()'\""
+
 label "Uploading files to the server"
 run "rsync -rav --exclude-from=.gitignore --exclude=.git --prune-empty-dirs . brain:/opt/heating_brain"
 
@@ -40,9 +43,6 @@ run "ssh brain \"sudo systemctl daemon-reload\""
 
 label "Enabling systemd service unit"
 run "ssh brain \"sudo systemctl enable heating_brain\""
-
-label "Backing up database"
-run "ssh brain \"/opt/heating_brain/_build/prod/rel/heating_brain/bin/heating_brain rpc ':ok = Collector.Storage.create_backup()'\""
 
 label "Creating a new release"
 run "ssh brain \"/opt/heating_brain/server/compile\""

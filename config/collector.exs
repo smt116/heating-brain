@@ -25,7 +25,8 @@ config :collector,
     {:"28-0118761f69ff", :pipe_in, nil, nil}
   ],
   w1_bus_delay_between_readings: 1_000,
-  w1_bus_master1_path: "/sys/bus/w1/devices/w1_bus_master1"
+  w1_bus_master1_path: "/sys/bus/w1/devices/w1_bus_master1",
+  w1_bus_read_timeout: 20_000
 
 config :mnesia,
   backups_directory: "/tmp/mnesia_backups",

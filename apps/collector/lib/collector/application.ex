@@ -3,14 +3,12 @@ defmodule Collector.Application do
 
   use Application
 
-  @handler_process Application.get_env(:collector, :filesystem_process)
-
   @impl true
   def start(_type, _args) do
     children =
       Enum.reject(
         [
-          @handler_process
+          Application.get_env(:collector, :filesystem_process)
           | [
               # The order is important.
               {Collector.Storage, []},
