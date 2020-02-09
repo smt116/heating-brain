@@ -11,10 +11,11 @@ use Mix.Config
 # before starting your production server.
 config :interface, InterfaceWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
+  check_origin: ["//heating-brain.local", "//ogrzewanie"],
   http: [:inet6, port: 80],
   live_view: [signing_salt: "PNPrVtXA/np3s/HgsrqSK+MHWhT2ldfk7KxeVz13yaaX2WRpq6MF0e/JU47AiP9h"],
   secret_key_base:
     "ceoDXVovvCIZfjEPCdEs6YJ6AKN1+xkS1vcfFZXdONT9f5koifDCPv8mMnR0lR85GRPMEDPm+cAqEgriwl2Ucz1LQrepxSB3igJuVsLY9ovVjNIAl",
-  url: [host: "ogrzewanie", port: 80]
+  url: [host: "heating-brain.local", port: 80]
 
 config :interface, InterfaceWeb.Endpoint, server: true
