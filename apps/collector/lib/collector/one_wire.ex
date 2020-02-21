@@ -7,7 +7,7 @@ defmodule Collector.OneWire do
 
   alias Collector.Measurement
 
-  @w1_bus_master1_path compile_env(:collector, :w1_bus_master1_path)
+  @w1_bus_master1_path get_env(:collector, :w1_bus_master1_path)
 
   @opaque raw_id :: atom
   @type error :: String.t()

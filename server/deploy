@@ -30,7 +30,7 @@ label "Logging deployment"
 run "ssh brain \"logger 'Deploying the Heating Brain application'\""
 
 label "Backing up database"
-run "ssh brain \"/opt/heating_brain/_build/prod/rel/heating_brain/bin/heating_brain --no-validate-compile-env rpc ':ok = Collector.Storage.create_backup()'\""
+run "ssh brain \"/opt/heating_brain/_build/prod/rel/heating_brain/bin/heating_brain rpc ':ok = Collector.Storage.create_backup()'\""
 
 label "Uploading files to the server"
 run "rsync -rav --exclude-from=.gitignore --exclude=.git --prune-empty-dirs . brain:/opt/heating_brain"
