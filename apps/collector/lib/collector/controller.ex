@@ -35,7 +35,7 @@ defmodule Collector.Controller do
   @impl true
   @spec handle_info({:new_record, record}, state) :: {:noreply, state}
   def handle_info({:new_record, %Measurement{id: id} = measurement}, state) do
-    item = get_env(:collector, :sensors_map) |> Enum.find(&(elem(&1, 1) === id))
+    item = sensor_configuration(id)
 
     new_state =
       case item do
@@ -47,11 +47,11 @@ defmodule Collector.Controller do
           Logger.debug(fn -> "There is no relay for #{id} sensor" end)
           state
 
-        {_, _, relay_id, expected_value} ->
+        {_, _, relay_id, _} ->
           state
           |> Keyword.put_new(relay_id, {nil, nil})
           |> Keyword.get_and_update(relay_id, fn {_value, timer} = current ->
-            {current, {measurement.value < expected_value, timer}}
+            {current, {is_below_expected_value?(measurement), timer}}
           end)
           |> schedule_relay_state_update(relay_id)
       end
@@ -93,6 +93,10 @@ defmodule Collector.Controller do
   defp cancel_timer(nil), do: :ok
   defp cancel_timer(reference), do: Process.cancel_timer(reference)
 
+  defp is_below_expected_value?(%Measurement{} = m) do
+    is_float(m.expected_value) && m.value < m.expected_value
+  end
+
   defp schedule_relay_state_update({{previous_value, timer}, state}, id) do
     {new_value, _timer} = state[id]
 
@@ -110,5 +114,9 @@ defmodule Collector.Controller do
 
       Keyword.update!(state, id, fn {value, _} -> {value, new_timer} end)
     end
+  end
+
+  defp sensor_configuration(id) do
+    get_env(:collector, :sensors_map) |> Enum.find(&(elem(&1, 1) === id))
   end
 end

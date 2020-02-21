@@ -3,6 +3,8 @@ defmodule Collector.Measurement do
   The struct that represents a single sensor's reading.
   """
 
+  import Application, only: [get_env: 2]
+
   @enforce_keys [:id, :value, :timestamp]
   @derive Jason.Encoder
   defstruct [:id, :value, :expected_value, :timestamp]
@@ -15,7 +17,7 @@ defmodule Collector.Measurement do
           %__MODULE__{
             id: id,
             value: value,
-            expected_value: value,
+            expected_value: value | nil,
             timestamp: timestamp
           }
 
@@ -23,37 +25,69 @@ defmodule Collector.Measurement do
   Initializes struct for a given reading. It assigns current timestamp if missing.
   """
   @spec new(id, value) :: t
-  def new(id, val) do
+  def new(id, value) do
     at = DateTime.utc_now() |> DateTime.truncate(:second)
-    eval = expected_value(id)
-    new(id, val, eval, at)
+    new(id, value, at)
   end
 
   @doc """
   Initializes struct for a given reading.
   """
-  @spec new(id, value :: value, expected_value :: value | nil, timestamp) :: t
-  def new(id, val, eval, %DateTime{} = at)
-      when is_atom(id) and is_float(val) and (is_nil(eval) or is_float(eval)) do
+  @spec new(id, value, timestamp) :: t
+  def new(id, value, %DateTime{} = at) when is_atom(id) and is_float(value) do
     %__MODULE__{
       id: id,
-      value: val,
-      expected_value: eval,
+      value: value,
+      expected_value: expected_value(id, at),
       timestamp: at
     }
   end
 
-  @spec new(id, value :: value, expected_value :: value | nil, unix_epoch :: pos_integer) :: t
-  def new(id, val, eval, unix_epoch) when is_integer(unix_epoch) and unix_epoch > 0 do
+  @spec new(id, value, unix_epoch :: pos_integer) :: t
+  def new(id, value, unix_epoch) when is_integer(unix_epoch) and unix_epoch > 0 do
     at = DateTime.from_unix!(unix_epoch)
-    new(id, val, eval, at)
+    new(id, value, at)
   end
 
-  @spec expected_value(id) :: value
-  defp expected_value(id) when is_atom(id) do
-    Application.get_env(:collector, :sensors_map)
-    |> Enum.map(fn {_, label, _, eval} -> {label, eval} end)
-    |> Keyword.get(id, nil)
+  @spec new(id, value, expected_value :: value, timestamp) :: t
+  def new(id, value, evalue, %DateTime{} = at)
+      when is_atom(id) and is_float(value) and (is_float(evalue) or is_nil(evalue)) do
+    %__MODULE__{
+      id: id,
+      value: value,
+      expected_value: evalue,
+      timestamp: at
+    }
+  end
+
+  @spec new(id, value, expected_value :: value, unix_epoch :: pos_integer) :: t
+  def new(id, value, evalue, unix_epoch) when is_integer(unix_epoch) and unix_epoch > 0 do
+    at = DateTime.from_unix!(unix_epoch)
+    new(id, value, evalue, at)
+  end
+
+  defp expected_value(id, %DateTime{} = at) do
+    case get_env(:collector, :sensors_map) |> Enum.find(&(elem(&1, 1) === id)) do
+      nil ->
+        nil
+
+      {_, _, _, []} ->
+        nil
+
+      {_, _, _, config} ->
+        at
+        |> DateTime.shift_zone!(get_env(:collector, :timezone))
+        |> DateTime.to_time()
+        |> Map.fetch!(:hour)
+        |> expected_value(config)
+    end
+  end
+
+  defp expected_value(hour, config) do
+    case Enum.find(config, &(hour in elem(&1, 0))) do
+      {_, expected_value} -> expected_value
+      nil -> nil
+    end
   end
 end
 

@@ -44,7 +44,7 @@ defmodule Collector.Sensors do
     |> elem(2)
   end
 
-  @spec to_sensor_id(id) :: Measurement.id()
+  # @spec to_sensor_id(id) :: Measurement.id() | nil
   def to_sensor_id(id) do
     Application.get_env(:collector, :sensors_map)
     |> Enum.find({nil, nil}, &(elem(&1, 2) === id))

@@ -15,7 +15,7 @@ defmodule Collector.MeasurementTest do
       assert %DateTime{} = m.timestamp
 
       assert %Measurement{id: :bathroom} = m = new(:bathroom, 20.125)
-      assert m.expected_value === 23.5
+      assert is_float(m.expected_value)
     end
   end
 

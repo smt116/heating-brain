@@ -20,10 +20,16 @@ config :collector,
     {:valve6, 26, "out"}
   ],
   sensors_map: [
-    {:"28-01187615e4ff", :living_room, :valve1, 25.0},
-    {:"28-01187654b6ff", :case, :valve2, 23.5},
-    {:"28-0118761f69ff", :pipe_in, nil, nil}
+    {:"28-01187615e4ff", :living_room, :valve1,
+     [
+       {Range.new(0, 7), 19.0},
+       {Range.new(7, 17), 21.0},
+       {Range.new(17, 24), 20.0}
+     ]},
+    {:"28-01187654b6ff", :case, :valve2, []},
+    {:"28-0118761f69ff", :pipe_in, nil, []}
   ],
+  timezone: "Europe/Warsaw",
   w1_bus_delay_between_readings: 1_000,
   w1_bus_master1_path: "/sys/bus/w1/devices/w1_bus_master1",
   w1_bus_read_timeout: 20_000

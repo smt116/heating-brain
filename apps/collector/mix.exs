@@ -6,7 +6,7 @@ defmodule Collector.MixProject do
       app: :collector,
       build_path: "../../_build",
       config_path: "../../config/config.exs",
-      deps: [],
+      deps: deps(),
       deps_path: "../../deps",
       elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -20,6 +20,12 @@ defmodule Collector.MixProject do
     [
       extra_applications: [:logger],
       mod: {Collector.Application, []}
+    ]
+  end
+
+  defp deps do
+    [
+      {:tzdata, "~> 1.0"}
     ]
   end
 
