@@ -5,5 +5,6 @@ set -e
 export MIX_ENV=prod
 
 cd /opt/heating_brain
+/usr/bin/mix local.hex --force
 /usr/bin/mix deps.get --only prod
 /usr/bin/mix release --overwrite
