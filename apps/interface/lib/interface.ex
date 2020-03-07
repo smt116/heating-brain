@@ -20,7 +20,7 @@ defmodule Interface do
         ]
   @type point :: %{x: DateTime.t(), y: Measurement.value() | RelayState.value()}
 
-  @within 60 * 60 * 12
+  @within 60 * 60 * 24
 
   defdelegate relay_id_to_sensor_id(id), to: Collector
   defdelegate subscribe_to_storage, to: Collector, as: :subscribe
