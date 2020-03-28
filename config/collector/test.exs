@@ -1,6 +1,6 @@
 import Config
 
-config :collector,
+config :heating_brain,
   read_initial_enabled: false,
   relay_controller_timer: 0,
   relays_map: [
@@ -26,5 +26,3 @@ config :collector,
     {:"28-0118761f69ff", :case, nil, []}
   ],
   w1_bus_delay_between_readings: 0
-
-config :mnesia, tables_storage: :ram_copies

@@ -1,6 +1,6 @@
 import Config
 
-config :collector,
+config :heating_brain,
   filesystem_handler: Collector.FilesystemMock,
   filesystem_process: {Collector.FilesystemMock, []},
   gpio_base_path: "/sys/class/gpio",
@@ -33,10 +33,5 @@ config :collector,
   w1_bus_delay_between_readings: 1_000,
   w1_bus_master1_path: "/sys/bus/w1/devices/w1_bus_master1",
   w1_bus_read_timeout: 20_000
-
-config :mnesia,
-  backups_directory: "/tmp/mnesia_backups",
-  dir: 'mnesia/#{Mix.env()}-#{node()}',
-  tables_storage: :disc_copies
 
 import_config "collector/#{Mix.env()}.exs"

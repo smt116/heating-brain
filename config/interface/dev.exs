@@ -1,6 +1,6 @@
 use Mix.Config
 
-config :interface, InterfaceWeb.Endpoint,
+config :heating_brain, InterfaceWeb.Endpoint,
   http: [port: 4000],
   debug_errors: true,
   code_reloader: true,
@@ -11,11 +11,11 @@ config :interface, InterfaceWeb.Endpoint,
       "--mode",
       "development",
       "--watch-stdin",
-      cd: Path.expand("../../apps/interface/assets", __DIR__)
+      cd: Path.expand("../../assets", __DIR__)
     ]
   ]
 
-config :interface, InterfaceWeb.Endpoint,
+config :heating_brain, InterfaceWeb.Endpoint,
   live_reload: [
     patterns: [
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
@@ -24,7 +24,3 @@ config :interface, InterfaceWeb.Endpoint,
       ~r"lib/interface_web/templates/.*(eex)$"
     ]
   ]
-
-config :phoenix, :stacktrace_depth, 20
-
-config :phoenix, :plug_init_mode, :runtime

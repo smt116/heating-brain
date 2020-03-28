@@ -1,6 +1,6 @@
 import Config
 
-config :collector,
+config :heating_brain,
   heating_controller_timer: 120_000,
   heating_controller_required_load: 16.0,
   read_initial_delay: 5_000,

@@ -18,13 +18,11 @@ function run() {
 }
 
 label "Building static assets"
-run "npm --prefix apps/interface/assets install"
-run "npm --prefix apps/interface/assets run deploy"
+run "npm --prefix assets install"
+run "npm --prefix assets run deploy"
 
 label "Digesting and compressing static files"
-run "cd apps/interface"
 run "mix phx.digest"
-run "cd -"
 
 label "Logging deployment"
 run "ssh brain \"logger 'Deploying the Heating Brain application'\""

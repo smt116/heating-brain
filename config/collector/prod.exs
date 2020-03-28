@@ -1,5 +1,5 @@
 import Config
 
-config :collector,
+config :heating_brain,
   filesystem_handler: File,
   filesystem_process: nil
