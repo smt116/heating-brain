@@ -79,7 +79,7 @@ defmodule Collector.Controller do
     end)
 
     get_env(:collector, :relays_map)
-    |> Stream.map(fn {id, _pin, _direction} -> id end)
+    |> Stream.map(&elem(&1, 0))
     |> Stream.filter(&(&1 |> to_string() |> String.starts_with?("valve")))
     |> Enum.each(&(RelayState.new(&1, false) |> put_state()))
   end

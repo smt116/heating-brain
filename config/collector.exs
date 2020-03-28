@@ -10,14 +10,14 @@ config :collector,
   read_interval: 10_000,
   relay_controller_timer: 2_000,
   relays_map: [
-    {:heating, 21, "out"},
-    {:pump, 20, "out"},
-    {:valve1, 0, "out"},
-    {:valve2, 5, "out"},
-    {:valve3, 6, "out"},
-    {:valve4, 13, "out"},
-    {:valve5, 19, "out"},
-    {:valve6, 26, "out"}
+    {:heating, 21, "out", nil},
+    {:pump, 20, "out", nil},
+    {:valve1, 0, "out", 39.1},
+    {:valve2, 5, "out", 9.7},
+    {:valve3, 6, "out", 9.0},
+    {:valve4, 13, "out", 15.6},
+    {:valve5, 19, "out", 14.8},
+    {:valve6, 26, "out", nil}
   ],
   sensors_map: [
     {:"28-01187615e4ff", :living_room, :valve1,

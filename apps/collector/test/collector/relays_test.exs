@@ -132,7 +132,7 @@ defmodule Collector.RelaysTest do
       has_all_relays_exported = fn ->
         paths = FilesystemMock.paths()
 
-        Enum.all?(@relays_map, fn {_, pin, _} ->
+        Enum.all?(@relays_map, fn {_, pin, _, _} ->
           paths
           |> Enum.find(&(&1 === "/sys/class/gpio/gpio#{pin}/value"))
           |> is_binary()

@@ -3,7 +3,7 @@ defmodule Collector.OneWire do
   Core logic for handling sensors connected via the 1-wire bus.
   """
 
-  import Application, only: [compile_env: 2, get_env: 2]
+  import Application, only: [get_env: 2]
 
   alias Collector.Measurement
 

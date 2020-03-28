@@ -16,10 +16,15 @@ defmodule Collector.HeatingController do
   alias Collector.Storage
 
   @typep id :: RelayState.id()
+  @typep load :: float | nil
   @typep record :: Measurement.t() | RelayState.t()
   @typep value :: RelayState.value()
 
-  @opaque state :: [timer: reference | nil, valves: list({id, value})]
+  @opaque state :: [
+            load_map: list({id, load}),
+            timer: reference | nil,
+            valves: list({id, value})
+          ]
 
   @heating_id :heating
   @initial_state [timer: nil, valves: []]
@@ -35,7 +40,7 @@ defmodule Collector.HeatingController do
   @impl true
   @spec handle_info({:new_record, record}, state) :: {:noreply, state}
   def handle_info({:new_record, %RelayState{} = relay_state}, state) do
-    if changes_heating_relay_state?(relay_state, state) do
+    if has_impact_on_heating_relay_state?(relay_state, state) do
       new_state =
         state
         |> put_in([:valves, relay_state.id], relay_state.value)
@@ -52,7 +57,7 @@ defmodule Collector.HeatingController do
 
   @spec handle_info(:put_heating_state, state) :: {:noreply, state}
   def handle_info(:put_heating_state, state) do
-    relay_state = any_valve_enabled?(state[:valves])
+    relay_state = any_valve_enabled?(state) && minimum_load_ensured?(state)
 
     Logger.debug(fn -> "Opened valves: #{inspect(state[:valves])}" end)
     RelayState.new(@heating_id, relay_state) |> put_state()
@@ -71,10 +76,15 @@ defmodule Collector.HeatingController do
 
   @spec start_link(state) :: GenServer.on_start()
   def start_link(state) do
+    load_map =
+      get_env(:collector, :relays_map)
+      |> Stream.filter(&(elem(&1, 0) |> is_for_valve?()))
+      |> Enum.map(fn {id, _, _, load} -> {id, load || 0.0} end)
+
     state =
-      Enum.reduce(@initial_state, state, fn {key, value}, acc ->
-        Keyword.put_new(acc, key, value)
-      end)
+      @initial_state
+      |> Enum.reduce(state, fn {k, v}, acc -> Keyword.put_new(acc, k, v) end)
+      |> Keyword.put_new(:load_map, load_map)
 
     GenServer.start_link(__MODULE__, state, name: __MODULE__)
   end
@@ -82,7 +92,7 @@ defmodule Collector.HeatingController do
   defp cancel_timer(nil), do: :ok
   defp cancel_timer(reference), do: Process.cancel_timer(reference)
 
-  defp changes_heating_relay_state?(%RelayState{} = relay_state, state) do
+  defp has_impact_on_heating_relay_state?(%RelayState{} = relay_state, state) do
     is_for_valve?(relay_state.id) && is_distinct?(relay_state, state)
   end
 
@@ -94,21 +104,31 @@ defmodule Collector.HeatingController do
 
   defp schedule_heating_state_update(state) do
     cancel_timer(state[:timer])
-    delay = put_heating_state_delay(state[:valves])
+    delay = put_heating_state_delay(state)
     timer = Process.send_after(self(), :put_heating_state, delay)
 
     put_in(state, [:timer], timer)
   end
 
-  def put_heating_state_delay(valves_states) do
-    if any_valve_enabled?(valves_states) do
+  def put_heating_state_delay(state) do
+    if any_valve_enabled?(state) && minimum_load_ensured?(state) do
       get_env(:collector, :heating_controller_timer)
     else
       0
     end
   end
 
-  def any_valve_enabled?(valves_states) do
-    Enum.any?(valves_states, fn {_id, value} -> value end)
+  def any_valve_enabled?(state) do
+    Enum.any?(state[:valves], fn {_id, value} -> value end)
+  end
+
+  def minimum_load_ensured?(state) do
+    load =
+      state[:valves]
+      |> Stream.filter(fn {_id, value} -> value end)
+      |> Stream.map(fn {id, _value} -> get_in(state, [:load_map, id]) end)
+      |> Enum.sum()
+
+    load >= get_env(:collector, :heating_controller_required_load)
   end
 end

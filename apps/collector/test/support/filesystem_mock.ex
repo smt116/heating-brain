@@ -155,7 +155,7 @@ defmodule Collector.FilesystemMock do
   end
 
   def set_relay(id, value) when is_atom(id) and is_boolean(value) do
-    {_, pin, direction} = Enum.find(@relays_map, fn {l, _, _} -> id === l end)
+    {_, pin, direction, _} = Enum.find(@relays_map, fn {l, _, _, _} -> id == l end)
     raw_value = if(value, do: "1\n", else: "0\n")
 
     pin
@@ -176,7 +176,7 @@ defmodule Collector.FilesystemMock do
   defp create({path, :directory}), do: mkdir!(path)
   defp create({path, {:file, content}}), do: write!(path, content)
 
-  defp gpio_paths({_, pin, direction}), do: gpio_paths(pin, direction)
+  defp gpio_paths({_, pin, direction, _}), do: gpio_paths(pin, direction)
 
   defp gpio_paths(pin, direction \\ "out", value \\ "0\n")
   defp gpio_paths(p, d, v) when is_number(p), do: to_string(p) |> gpio_paths(d, v)

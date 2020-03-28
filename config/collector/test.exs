@@ -4,10 +4,10 @@ config :collector,
   read_initial_enabled: false,
   relay_controller_timer: 0,
   relays_map: [
-    {:heating, 21, "out"},
-    {:pump, 20, "out"},
-    {:valve1, 0, "out"},
-    {:valve2, 5, "out"}
+    {:heating, 21, "out", nil},
+    {:pump, 20, "out", nil},
+    {:valve1, 0, "out", 3.5},
+    {:valve2, 5, "out", 3.5}
   ],
   sensors_map: [
     {:"28-01187615e4ff", :living_room, :valve1,

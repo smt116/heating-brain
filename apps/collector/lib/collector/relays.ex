@@ -44,7 +44,7 @@ defmodule Collector.Relays do
   @spec read_all :: list(RelayState.t())
   def read_all do
     get_env(:collector, :relays_map)
-    |> Stream.map(fn {id, _pin, _direction} -> {id, relay_value(id)} end)
+    |> Stream.map(fn {id, _pin, _direction, _load} -> {id, relay_value(id)} end)
     |> Enum.map(fn {id, state} -> RelayState.new(id, state) end)
   end
 
@@ -95,7 +95,8 @@ defmodule Collector.Relays do
   end
 
   defp relay_directory_path(id) do
-    {_id, pin, _direction} = get_env(:collector, :relays_map) |> Enum.find(&(elem(&1, 0) === id))
+    {_id, pin, _direction, _} =
+      get_env(:collector, :relays_map) |> Enum.find(&(elem(&1, 0) === id))
 
     Path.join([get_env(:collector, :gpio_base_path), "gpio#{to_string(pin)}"])
   end
@@ -119,7 +120,7 @@ defmodule Collector.Relays do
     |> raw_value_to_boolean()
   end
 
-  defp setup({id, pin, direction}) do
+  defp setup({id, pin, direction, _load}) do
     handler = get_env(:collector, :filesystem_handler)
 
     if relay_directory_path(id) |> handler.dir?() do
