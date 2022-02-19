@@ -31,7 +31,7 @@ label "Backing up database"
 run "ssh brain \"/opt/heating_brain/_build/prod/rel/heating_brain/bin/heating_brain rpc ':ok = Collector.Storage.create_backup()' || echo App is not running\""
 
 label "Uploading files to the server"
-run "rsync -rav --exclude-from=.gitignore --exclude=.git --prune-empty-dirs . brain:/opt/heating_brain"
+run "rsync -rav --include=priv/static --exclude-from=.gitignore --exclude=.git --prune-empty-dirs . brain:/opt/heating_brain"
 
 label "Updating systemd service unit"
 run "ssh brain \"sudo cp /opt/heating_brain/server/systemd/heating_brain.service /etc/systemd/system/heating_brain.service\""
