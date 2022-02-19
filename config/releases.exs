@@ -22,14 +22,15 @@ config :heating_brain,
      [
        {Range.new(0, 6), 19.0},
        {Range.new(6, 9), 21.5},
-       {Range.new(9, 19), 21.0},
-       {Range.new(19, 20), 21.5},
-       {Range.new(20, 24), 20.0}
+       {Range.new(9, 18), 21.0},
+       {Range.new(18, 19), 21.5},
+       {Range.new(19, 24), 20.0}
      ]},
     {:"28-0119504469ff", :living_room, :valve1,
      [
        {Range.new(0, 6), 19.0},
-       {Range.new(6, 20), 21.0},
+       {Range.new(6, 19), 22.0},
+       {Range.new(19, 20), 21.0},
        {Range.new(20, 24), 20.0}
      ]},
     {:"28-01187654b6ff", :pipe_in, nil, []},
@@ -51,7 +52,7 @@ config :heating_brain,
     {:"28-0118765246ff", :room, :valve5,
      [
        {Range.new(0, 6), 18.5},
-       {Range.new(6, 7), 19.0},
+       {Range.new(6, 7), 20.0},
        {Range.new(7, 24), 18.5}
      ]}
   ],
