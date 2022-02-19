@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :heating_brain, InterfaceWeb.Endpoint,
   http: [port: 4000],

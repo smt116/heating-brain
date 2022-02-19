@@ -16,6 +16,7 @@ defmodule HeatingBrain.Application do
               {Collector.HeatingController, []},
               {Collector.Controller, []},
               {Collector.Reader, []},
+              {Phoenix.PubSub, [name: InterfaceWeb.PubSub, adapter: Phoenix.PubSub.PG2]},
               InterfaceWeb.Endpoint
             ]
         ],

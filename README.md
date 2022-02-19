@@ -2,8 +2,7 @@
 
 ## Requirements
 
-1. Elixir 1.10.x
-1. Erlang (at least 22.x)
+See `.tool-versions` file.
 
 ## Deployment
 

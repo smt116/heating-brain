@@ -8,7 +8,7 @@ defmodule HeatingBrain.MixProject do
       compilers: [:phoenix] ++ Mix.compilers(),
       deps: deps(),
       dialyzer: dialyzer(),
-      elixir: "~> 1.9",
+      elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       version: version()
@@ -37,17 +37,17 @@ defmodule HeatingBrain.MixProject do
 
   defp deps do
     [
-      {:credo, "~> 1.1", only: [:dev], runtime: false},
-      {:dialyxir, "~> 1.0.0-rc.7", only: [:dev], runtime: false},
-      {:jason, "~> 1.0"},
-      {:phoenix, "~> 1.4"},
-      {:phoenix_html, "~> 2.11"},
-      {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_view, "~> 0.6"},
-      {:phoenix_pubsub, "~> 1.1"},
-      {:plug_cowboy, "~> 2.0"},
-      {:stream_data, "~> 0.4", only: [:dev, :test], runtime: false},
-      {:tzdata, "~> 1.0"}
+      {:credo, "~> 1.6", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
+      {:jason, "~> 1.3"},
+      {:phoenix, "~> 1.6"},
+      {:phoenix_html, "~> 3.2"},
+      {:phoenix_live_reload, "~> 1.3", only: :dev},
+      {:phoenix_live_view, "~> 0.17"},
+      {:phoenix_pubsub, "~> 2.0"},
+      {:plug_cowboy, "~> 2.5"},
+      {:stream_data, "~> 0.5", only: [:dev, :test], runtime: false},
+      {:tzdata, "~> 1.1"}
     ]
   end
 
