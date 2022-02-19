@@ -42,6 +42,10 @@ run "ssh brain \"sudo systemctl daemon-reload\""
 label "Enabling systemd service unit"
 run "ssh brain \"sudo systemctl enable heating_brain\""
 
+label "Updating version tag file"
+VERSION=$(git rev-parse HEAD)
+run "ssh brain \"echo $VERSION >> /opt/heating_brain/VERSION_SHA\""
+
 label "Creating a new release"
 run "ssh brain \"/opt/heating_brain/server/compile\""
 

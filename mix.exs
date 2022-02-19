@@ -67,9 +67,9 @@ defmodule HeatingBrain.MixProject do
   defp elixirc_paths(:dev), do: ["lib", "test/support/filesystem_mock.ex"]
   defp elixirc_paths(:test), do: ["lib", "test"]
 
-  defp version do
-    {sha, 0} = System.cmd("git", ["rev-parse", "HEAD"])
-    short_sha = String.slice(sha, 0, 9)
-    "1.0.0-#{Mix.env()}.#{short_sha}"
-  end
+  defp version, do: "1.0.0-#{Mix.env()}+#{String.slice(git_sha(), 0, 9)}"
+
+  defp git_sha, do: File.dir?(".git") |> git_sha()
+  defp git_sha(true), do: ({_, 0} = System.cmd("git", ["rev-parse", "HEAD"])) |> elem(0)
+  defp git_sha(_), do: File.read!("VERSION_SHA") |> String.trim()
 end
