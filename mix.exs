@@ -29,8 +29,9 @@ defmodule HeatingBrain.MixProject do
 
   def application do
     [
-      mod: {HeatingBrain.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools],
+      included_applications: [:mnesia],
+      mod: {HeatingBrain.Application, []}
     ]
   end
 
