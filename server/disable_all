@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+set -e
+
+green=`tput setaf 2`
+yellow=`tput setaf 3`
+blue=`tput setaf 4`
+reset=`tput sgr0`
+
+function label() {
+  echo
+  echo "${green}$1${reset}"
+}
+
+function run() {
+  echo "${blue}Running ${yellow}$@${reset}"
+  eval $@
+}
+
+label "Disabling heating..."
+run "ssh brain \"echo 0 > /sys/class/gpio/gpio21/value\""
+
+label "Disabling valves..."
+run "ssh brain \"echo 0 > /sys/class/gpio/gpio0/value\""
+run "ssh brain \"echo 0 > /sys/class/gpio/gpio5/value\""
+run "ssh brain \"echo 0 > /sys/class/gpio/gpio6/value\""
+run "ssh brain \"echo 0 > /sys/class/gpio/gpio13/value\""
+run "ssh brain \"echo 0 > /sys/class/gpio/gpio19/value\""
