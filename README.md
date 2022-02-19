@@ -41,7 +41,6 @@
 
 ### On the server
 
-1. [Set the static IP address](https://thepihut.com/blogs/raspberry-pi-tutorials/how-to-give-your-raspberry-pi-a-static-ip-address-update).
 1. [Set the hostname](https://thepihut.com/blogs/raspberry-pi-tutorials/19668676-renaming-your-raspberry-pi-the-hostname):
 
     ```
@@ -95,7 +94,8 @@
     & stop
 
     # /etc/rsyslog.d/99-nas.conf
-    *.* @192.168.0.2:514
+    use local address like "rsyslog.local"
+    *.* @192.168.2.10:514
 
     $ActionQueueFileName queue
     $ActionQueueMaxDiskSpace 1g
