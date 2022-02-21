@@ -1,5 +1,17 @@
 # Heating Brain
 
+Heating Brain is a hobby project and kind of a playground. It means the code may change a lot, and there are several places for improvements.
+
+I've started the project because I was very disappointed about "the industry device" for controlling the floor heating system in my house. It turned out that it is highly inefficient and lacks features that I would like to have. I decided to buy a Raspberry PI Zero, a Relay controller, a few 1-wire sensors and put it together. I created this application to:
+
+- allow checking the temperatures, valves state, and gas stove via UI (i.e., heating-brain.local),
+- ensure the controller won't enable gas stove until there is a sufficient heating extraction (i.e., enough floor sections are opened),
+- allow introducing a complex "expected temperates time-table" for all sections.
+
+In the future, I would like to improve the system by teaching it when to start the gas stove to achieve the expected temperature on a given hour in a given section (handling the thermal inertia of the floor).
+
+The controller already gave my 20-30% better performance than "the industry device" in terms of gas consumption.
+
 ## Requirements
 
 See `.tool-versions` file.
@@ -69,14 +81,7 @@ See `.tool-versions` file.
     sudo apt-get autoclean
     ```
 
-1. [Install Erlang and Elixir](https://www.erlang-solutions.com/blog/installing-elixir-on-a-raspberry-pi-the-easy-way.html):
-
-    ```
-    wget https://packages.erlang-solutions.com/erlang-solutions_2.0_all.deb
-    sudo dpkg -i erlang-solutions_2.0_all.deb
-    rm erlang-solutions_2.0_all.deb
-    sudo apt-get install -y elixir
-    ```
+1. Install Erlang and Elixir.
 
 1. Configure [rsyslog](https://www.rsyslog.com/doc/master/tutorials/reliable_forwarding.html) (optional):
 
